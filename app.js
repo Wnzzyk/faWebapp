@@ -1,9 +1,4 @@
-/**
- * Faceit Arena — Vanilla JS Frontend
- * Замени API_BASE на URL твоего Cloudflare Worker
- */
-
-const API_BASE = 'https://faceit-api.YOUR_SUBDOMAIN.workers.dev'; // ← сюда URL воркера
+const API_BASE = 'https://faceit-api.wenzzyk.workers.dev/'; 
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
