@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d0d0d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Faceit Arena</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+
+  <!-- Splash screen -->
+  <div id="splash" class="splash">
+    <div class="splash-inner">
+      <div class="splash-logo">⚡</div>
+      <div class="splash-title">Faceit Arena</div>
+      <div class="splash-sub">Standoff 2</div>
+      <div class="splash-dots">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main app -->
+  <div id="app" class="app hidden">
+
+    <!-- Back button (shown when viewing other player) -->
+    <button id="back-btn" class="back-btn hidden" onclick="App.goBack()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <path d="M15 18l-6-6 6-6" stroke="#FFD700" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      Назад
+    </button>
+
+    <!-- Tab content -->
+    <div id="tab-content" class="tab-content"></div>
+
+    <!-- Bottom navigation -->
+    <nav class="nav">
+      <button class="nav-btn active" data-tab="profile" onclick="App.switchTab('profile')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="8" r="4" class="nav-icon-fill"/>
+          <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" class="nav-icon-stroke" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span>Профиль</span>
+      </button>
+      <button class="nav-btn" data-tab="leaderboard" onclick="App.switchTab('leaderboard')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="12" width="4" height="9" rx="1" class="nav-icon-fill"/>
+          <rect x="10" y="7" width="4" height="14" rx="1" class="nav-icon-fill"/>
+          <rect x="17" y="3" width="4" height="18" rx="1" class="nav-icon-fill"/>
+        </svg>
+        <span>Топ</span>
+      </button>
+      <button class="nav-btn" data-tab="search" onclick="App.switchTab('search')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <circle cx="11" cy="11" r="7" class="nav-icon-stroke" stroke-width="2"/>
+          <path d="M20 20l-3-3" class="nav-icon-stroke" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span>Поиск</span>
+      </button>
+    </nav>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
