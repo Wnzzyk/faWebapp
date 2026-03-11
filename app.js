@@ -1,4 +1,4 @@
-const API_BASE = 'https://faceit-api.wenzzyk.workers.dev/'; 
+const API_BASE = 'https://faceit-api.wenzzyk.workers.dev';
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
