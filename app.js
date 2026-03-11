@@ -1,4 +1,4 @@
-const API_BASE = 'https://faceit-api.wenzzyk.workers.dev';
+const API_BASE = 'https://faceit-api.wenzzyk.workers.dev'; // ← сюда URL воркера
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
@@ -11,7 +11,7 @@ const state = {
 };
 
 // ── Telegram init ─────────────────────────────────────────────────────────────
-//rework
+
 let tg = null;
 if (window.Telegram?.WebApp) {
   tg = window.Telegram.WebApp;
@@ -31,21 +31,41 @@ function hapticSelect() {
 // ── API helpers ───────────────────────────────────────────────────────────────
 
 async function apiGet(path) {
-  const url = API_BASE.replace(/\/$/, '') + '/' + path.replace(/^\//, '');
-  const res = await fetch(url);
+  const res = await fetch(API_BASE + path);
   if (!res.ok) throw Object.assign(new Error('API error'), { status: res.status });
   return res.json();
 }
 
 async function apiPost(path, body) {
-  const url = API_BASE.replace(/\/$/, '') + '/' + path.replace(/^\//, '');
-  const res = await fetch(url, {
+  const res = await fetch(API_BASE + path, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
   if (!res.ok) throw Object.assign(new Error('API error'), { status: res.status });
   return res.json();
+}
+
+// ── Avatar helpers ────────────────────────────────────────────────────────────
+
+/**
+ * Returns an avatar HTML element:
+ *  - <img> via /api/telegram-avatar if userId is present
+ *  - letter fallback otherwise
+ * fallbackStyle — inline style string for the fallback div
+ */
+function avatarHTML(userId, nickname, fallbackStyle = '', cls = '') {
+  const letter = (nickname || '?')[0].toUpperCase();
+  if (userId) {
+    const src = `${API_BASE}/api/telegram-avatar?user_id=${userId}`;
+    // Wrap img + hidden fallback letter; JS swaps on error
+    return `<div class="tg-avatar ${cls}" style="${fallbackStyle}" data-letter="${letter}">
+      <img src="${src}" alt="${letter}" loading="lazy"
+           onload="this.style.opacity=1;this.parentElement.classList.add('has-img')"
+           onerror="this.remove();this.parentElement.classList.remove('has-img')"/>
+    </div>`;
+  }
+  return `<div class="tg-avatar ${cls}" style="${fallbackStyle}" data-letter="${letter}"></div>`;
 }
 
 // ── UI helpers ────────────────────────────────────────────────────────────────
@@ -318,11 +338,16 @@ function renderPlayerStats(p, isProTab = false) {
 }
 
 function renderPlayer(player) {
+  const bannerGradient = levelGradient(player.level);
   const bannerBg = player.bannerFileId
-    ? `<img src="${API_BASE}/api/telegram-file?file_id=${player.bannerFileId}" alt="banner"/>`
-    : `<div class="banner-bg" style="background:${levelGradient(player.level)}"></div>`;
+    ? `<img src="${API_BASE}/api/telegram-file?file_id=${player.bannerFileId}" alt="banner"
+           onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'banner-bg',style:'background:${bannerGradient}'}))"/>`
+    : `<div class="banner-bg" style="background:${bannerGradient}"></div>`;
 
   const rankColor = player.rank <= 3 ? '#FFD700' : '#ffffff';
+
+  const lvlColor = getLevelColor(player.level);
+  const avatarFallbackStyle = `background:${lvlColor}18;--tg-avatar-color:${lvlColor};border-color:${lvlColor}40`;
 
   const container = el('div');
   container.innerHTML = `
@@ -330,14 +355,17 @@ function renderPlayer(player) {
       ${bannerBg}
       <div class="banner-overlay"></div>
       <div class="banner-info">
-        <div class="banner-name">
-          <div class="banner-tags">
-            ${levelBadgeHTML(player.level, 'md')}
-            ${player.isPremium ? '<span class="tag tag-premium">✨ Premium</span>' : ''}
-            ${player.hasProLeague ? '<span class="tag tag-pro">🏅 Pro</span>' : ''}
+        <div class="banner-name" style="display:flex;align-items:flex-end;gap:12px">
+          ${avatarHTML(player.userId, player.gameNickname, avatarFallbackStyle, 'banner-avatar')}
+          <div>
+            <div class="banner-tags">
+              ${levelBadgeHTML(player.level, 'md')}
+              ${player.isPremium ? '<span class="tag tag-premium">✨ Premium</span>' : ''}
+              ${player.hasProLeague ? '<span class="tag tag-pro">🏅 Pro</span>' : ''}
+            </div>
+            <h1 style="${player.nickColor ? `color:${player.nickColor}` : ''}">${player.gameNickname}</h1>
+            ${player.playerTag ? `<span class="player-tag-text">[${player.playerTag}]</span>` : ''}
           </div>
-          <h1 style="${player.nickColor ? `color:${player.nickColor}` : ''}">${player.gameNickname}</h1>
-          ${player.playerTag ? `<span class="player-tag-text">[${player.playerTag}]</span>` : ''}
         </div>
         <div class="banner-rank">
           <div class="rank-label">РЕЙТИНГ</div>
@@ -468,12 +496,12 @@ function renderLbBody(data, league) {
       if (!entry) return;
       const isFirst = i === 1;
       const avatarSize = isFirst ? 60 : 50;
-      const fontSize = isFirst ? '22' : '18';
+      const avFallback = `width:${avatarSize}px;height:${avatarSize}px;font-size:${isFirst?'22':'18'}px;background:linear-gradient(135deg,${colors[i]}30,${colors[i]}60);--tg-avatar-color:${colors[i]};border-color:${colors[i]};${isFirst ? `box-shadow:0 0 20px ${colors[i]}40` : ''}`;
       html += `
         <div class="podium-item" onclick="App.viewPlayer('${entry.gameNickname}')">
           <span class="podium-medal">${medals[i]}</span>
-          <div class="podium-avatar" style="width:${avatarSize}px;height:${avatarSize}px;font-size:${fontSize}px;background:linear-gradient(135deg,${colors[i]}30,${colors[i]}60);border-color:${colors[i]};${isFirst ? `box-shadow:0 0 20px ${colors[i]}40` : ''}">
-            ${entry.gameNickname[0].toUpperCase()}
+          <div class="podium-avatar-wrap" style="width:${avatarSize}px;height:${avatarSize}px">
+            ${avatarHTML(entry.userId, entry.gameNickname, avFallback, 'podium-tg-avatar')}
           </div>
           <div class="podium-pedestal" style="height:${heights[i]}px;background:linear-gradient(180deg,${colors[i]}20,${colors[i]}08);border:1px solid ${colors[i]}20;border-bottom:none">
             <span class="podium-nick">${entry.gameNickname}</span>
@@ -499,12 +527,11 @@ function renderLbBody(data, league) {
     const isMine = entry.id === myId;
     const lvlColor = getLevelColor(entry.level);
     const delay = Math.min(i * 30, 500);
+    const avFallback = `background:${lvlColor}20;--tg-avatar-color:${lvlColor};border-color:${lvlColor}30`;
     html += `
       <div class="lb-row${isMine ? ' mine' : ''}" style="animation-delay:${delay}ms" onclick="App.viewPlayer('${entry.gameNickname}')">
         <span class="lb-rank">#${entry.rank}</span>
-        <div class="lb-avatar" style="background:${lvlColor}20;color:${lvlColor};border:1px solid ${lvlColor}30">
-          ${entry.gameNickname[0].toUpperCase()}
-        </div>
+        ${avatarHTML(entry.userId, entry.gameNickname, avFallback, 'lb-tg-avatar')}
         <div class="lb-info">
           <div class="lb-name-row">
             <span class="lb-name">${entry.gameNickname}</span>
@@ -599,11 +626,10 @@ function renderSearchResults(q, results, searched) {
   results.forEach((p, i) => {
     const lvlColor = getLevelColor(p.level);
     const delay = i * 40;
+    const avFallback = `background:${lvlColor}18;--tg-avatar-color:${lvlColor};border-color:${lvlColor}30`;
     html += `
       <div class="search-row" style="animation-delay:${delay}ms" onclick="App.viewPlayer('${p.gameNickname}')">
-        <div class="search-avatar" style="background:${lvlColor}18;color:${lvlColor};border:1.5px solid ${lvlColor}30">
-          ${p.gameNickname[0].toUpperCase()}
-        </div>
+        ${avatarHTML(p.userId, p.gameNickname, avFallback, 'search-tg-avatar')}
         <div class="search-info">
           <div class="search-name-row">
             <span class="search-name">${p.gameNickname}</span>
