@@ -413,6 +413,40 @@ img { display: block; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ── TG Avatar (universal) ─────────────────────────────────────────────────── */
+.tg-avatar {
+  position: relative; flex-shrink: 0; border-radius: 12px; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+  font-weight: 900; color: var(--tg-avatar-color, var(--accent));
+}
+/* show the letter via ::before when no image loaded */
+.tg-avatar::before {
+  content: attr(data-letter);
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 0;
+}
+.tg-avatar img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%; object-fit: cover;
+  opacity: 0; transition: opacity 0.25s ease;
+  z-index: 1;
+}
+.tg-avatar.has-img img { opacity: 1; }
+
+/* Size variants used by each context */
+.banner-avatar  { width: 56px; height: 56px; font-size: 22px; border-radius: 14px; border-color: rgba(255,255,255,0.15); }
+.lb-tg-avatar   { width: 36px; height: 36px; font-size: 13px; }
+.search-tg-avatar { width: 44px; height: 44px; font-size: 18px; }
+.podium-tg-avatar { width: 100%; height: 100%; border-radius: 14px; font-size: 20px; border: 2px solid currentColor; }
+
+/* Wrap for podium so size is controlled by parent */
+.podium-avatar-wrap {
+  flex-shrink: 0; position: relative;
+}
+
 /* ── Animations ────────────────────────────────────────────────────────────── */
 @keyframes fade-in {
   from { opacity: 0; } to { opacity: 1; }
