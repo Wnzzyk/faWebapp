@@ -372,9 +372,9 @@ function renderPlayerStats(p, isProTab = false) {
 
 function renderPlayer(player) {
   const bannerGradient = levelGradient(player.level);
+  // Banner: store gradient in data attr to avoid quote escaping issues in onerror
   const bannerBg = player.bannerFileId
-    ? `<img src="${API_BASE}/api/telegram-file?file_id=${player.bannerFileId}" alt="banner"
-           onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'banner-bg',style:'background:${bannerGradient}'}))"/>`
+    ? `<div class="banner-bg banner-img-wrap" data-file-id="${player.bannerFileId}" data-gradient="${bannerGradient}"></div>`
     : `<div class="banner-bg" style="background:${bannerGradient}"></div>`;
 
   const rankColor = player.rank <= 3 ? '#FFD700' : '#ffffff';
@@ -476,6 +476,21 @@ function renderPlayer(player) {
   wrap.appendChild(container);
   document.getElementById('tab-content').innerHTML = '';
   document.getElementById('tab-content').appendChild(wrap);
+
+  // Load banner image
+  const bannerWrap = wrap.querySelector('.banner-img-wrap[data-file-id]');
+  if (bannerWrap) {
+    const fileId = bannerWrap.dataset.fileId;
+    const gradient = bannerWrap.dataset.gradient;
+    bannerWrap.style.background = gradient;
+    const img = document.createElement('img');
+    img.alt = 'banner';
+    img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.4s ease';
+    img.onload  = () => { img.style.opacity = '1'; };
+    img.onerror = () => { img.remove(); bannerWrap.style.background = gradient; };
+    img.src = `${API_BASE}/api/telegram-file?file_id=${fileId}`;
+    bannerWrap.appendChild(img);
+  }
 
   setTimeout(() => { activateAnimations(wrap); activateAvatars(wrap); }, 50);
 }
@@ -855,7 +870,5 @@ async function boot() {
     }
   }
 }
-
-boot();
 
 boot();
