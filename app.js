@@ -11,7 +11,7 @@ const state = {
 };
 
 // ── Telegram init ─────────────────────────────────────────────────────────────
-
+//rework
 let tg = null;
 if (window.Telegram?.WebApp) {
   tg = window.Telegram.WebApp;
