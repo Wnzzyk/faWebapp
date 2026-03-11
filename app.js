@@ -31,13 +31,15 @@ function hapticSelect() {
 // ── API helpers ───────────────────────────────────────────────────────────────
 
 async function apiGet(path) {
-  const res = await fetch(API_BASE + path);
+  const url = API_BASE.replace(/\/$/, '') + '/' + path.replace(/^\//, '');
+  const res = await fetch(url);
   if (!res.ok) throw Object.assign(new Error('API error'), { status: res.status });
   return res.json();
 }
 
 async function apiPost(path, body) {
-  const res = await fetch(API_BASE + path, {
+  const url = API_BASE.replace(/\/$/, '') + '/' + path.replace(/^\//, '');
+  const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
