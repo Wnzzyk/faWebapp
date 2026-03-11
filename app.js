@@ -59,13 +59,46 @@ function avatarHTML(userId, nickname, fallbackStyle = '', cls = '') {
   if (userId) {
     const src = `${API_BASE}/api/telegram-avatar?user_id=${userId}`;
     // Wrap img + hidden fallback letter; JS swaps on error
-    return `<div class="tg-avatar ${cls}" style="${fallbackStyle}" data-letter="${letter}">
-      <img src="${src}" alt="${letter}" loading="lazy"
-           onload="this.style.opacity=1;this.parentElement.classList.add('has-img')"
-           onerror="this.remove();this.parentElement.classList.remove('has-img')"/>
-    </div>`;
+    return `<div class="tg-avatar ${cls}" style="${fallbackStyle}" data-letter="${letter}" data-src="${src}"></div>`;
   }
   return `<div class="tg-avatar ${cls}" style="${fallbackStyle}" data-letter="${letter}"></div>`;
+}
+
+// ── Avatar lazy loading via IntersectionObserver ─────────────────────────────
+
+/**
+ * Activates deferred avatar loading for all .tg-avatar[data-src] elements
+ * inside a given container. Uses IntersectionObserver when available,
+ * otherwise loads immediately. Avoids browser [Intervention] on lazy imgs.
+ */
+function activateAvatars(container) {
+  const avatars = (container || document).querySelectorAll('.tg-avatar[data-src]');
+  if (!avatars.length) return;
+
+  function loadAvatar(el) {
+    if (el._avatarLoaded) return;
+    el._avatarLoaded = true;
+    const src = el.dataset.src;
+    if (!src) return;
+    const img = document.createElement('img');
+    img.alt = el.dataset.letter || '';
+    img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.25s ease;z-index:1';
+    img.onload  = () => { img.style.opacity = '1'; el.classList.add('has-img'); };
+    img.onerror = () => { img.remove(); el.classList.remove('has-img'); };
+    img.src = src;
+    el.appendChild(img);
+  }
+
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries, obs) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { loadAvatar(e.target); obs.unobserve(e.target); }
+      });
+    }, { rootMargin: '200px' });
+    avatars.forEach(el => observer.observe(el));
+  } else {
+    avatars.forEach(loadAvatar);
+  }
 }
 
 // ── UI helpers ────────────────────────────────────────────────────────────────
@@ -394,6 +427,7 @@ function renderPlayer(player) {
         btn.classList.add('active');
         statsDiv.innerHTML = renderPlayerStats(player, currentTab === 'pro');
         activateAnimations(statsDiv);
+        activateAvatars(statsDiv);
       });
     });
 
@@ -443,7 +477,7 @@ function renderPlayer(player) {
   document.getElementById('tab-content').innerHTML = '';
   document.getElementById('tab-content').appendChild(wrap);
 
-  setTimeout(() => activateAnimations(wrap), 50);
+  setTimeout(() => { activateAnimations(wrap); activateAvatars(wrap); }, 50);
 }
 
 // ── Render Leaderboard ────────────────────────────────────────────────────────
@@ -552,7 +586,7 @@ function renderLbBody(data, league) {
   html += `</div>`;
 
   const body = document.getElementById('lb-body');
-  if (body) body.innerHTML = html;
+  if (body) { body.innerHTML = html; activateAvatars(body); }
 }
 
 // ── Render Search ─────────────────────────────────────────────────────────────
@@ -652,6 +686,7 @@ function renderSearchResults(q, results, searched) {
   });
   html += '</div>';
   container.innerHTML = html;
+  activateAvatars(container);
 }
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
@@ -801,6 +836,7 @@ async function boot() {
     splash.classList.add('fade-out');
     app.classList.remove('hidden');
     renderPlayer(data.player);
+    activateAvatars(document.getElementById('tab-content'));
 
   } catch (e) {
     splash.classList.add('fade-out');
@@ -819,5 +855,7 @@ async function boot() {
     }
   }
 }
+
+boot();
 
 boot();
