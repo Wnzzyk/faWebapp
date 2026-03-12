@@ -1,7 +1,7 @@
 const API_BASE = 'https://faceit-api.wenzzyk.workers.dev'; // ← сюда URL воркера
 
 // ── State ─────────────────────────────────────────────────────────────────────
-
+ 
 const state = {
   player: null,       // текущий авторизованный игрок
   tgUser: null,
@@ -9,9 +9,9 @@ const state = {
   viewedNick: null,   // ник просматриваемого игрока (если не свой)
   viewedPlayer: null,
 };
-
+ 
 // ── Telegram init ─────────────────────────────────────────────────────────────
-
+ 
 let tg = null;
 if (window.Telegram?.WebApp) {
   tg = window.Telegram.WebApp;
@@ -20,22 +20,22 @@ if (window.Telegram?.WebApp) {
   try { tg.setHeaderColor('#0d0d0d'); } catch {}
   try { tg.setBackgroundColor('#0d0d0d'); } catch {}
 }
-
+ 
 function haptic(type = 'light') {
   try { tg?.HapticFeedback?.impactOccurred(type); } catch {}
 }
 function hapticSelect() {
   try { tg?.HapticFeedback?.selectionChanged(); } catch {}
 }
-
+ 
 // ── API helpers ───────────────────────────────────────────────────────────────
-
+ 
 async function apiGet(path) {
   const res = await fetch(API_BASE + path);
   if (!res.ok) throw Object.assign(new Error('API error'), { status: res.status });
   return res.json();
 }
-
+ 
 async function apiPost(path, body) {
   const res = await fetch(API_BASE + path, {
     method: 'POST',
@@ -45,9 +45,9 @@ async function apiPost(path, body) {
   if (!res.ok) throw Object.assign(new Error('API error'), { status: res.status });
   return res.json();
 }
-
+ 
 // ── Avatar helpers ────────────────────────────────────────────────────────────
-
+ 
 /**
  * Returns an avatar HTML element:
  *  - <img> via /api/telegram-avatar if userId is present
@@ -63,9 +63,9 @@ function avatarHTML(userId, nickname, fallbackStyle = '', cls = '') {
   }
   return `<div class="tg-avatar ${cls}" style="${fallbackStyle}" data-letter="${letter}"></div>`;
 }
-
+ 
 // ── Avatar lazy loading via IntersectionObserver ─────────────────────────────
-
+ 
 /**
  * Activates deferred avatar loading for all .tg-avatar[data-src] elements
  * inside a given container. Uses IntersectionObserver when available,
@@ -74,7 +74,7 @@ function avatarHTML(userId, nickname, fallbackStyle = '', cls = '') {
 function activateAvatars(container) {
   const avatars = (container || document).querySelectorAll('.tg-avatar[data-src]');
   if (!avatars.length) return;
-
+ 
   function loadAvatar(el) {
     if (el._avatarLoaded) return;
     el._avatarLoaded = true;
@@ -88,7 +88,7 @@ function activateAvatars(container) {
     img.src = src;
     el.appendChild(img);
   }
-
+ 
   if ('IntersectionObserver' in window) {
     const observer = new IntersectionObserver((entries, obs) => {
       entries.forEach(e => {
@@ -100,30 +100,30 @@ function activateAvatars(container) {
     avatars.forEach(loadAvatar);
   }
 }
-
+ 
 // ── UI helpers ────────────────────────────────────────────────────────────────
-
+ 
 function el(tag, cls, inner) {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
   if (inner !== undefined) e.innerHTML = inner;
   return e;
 }
-
+ 
 function setContent(html) {
   document.getElementById('tab-content').innerHTML = '';
   const wrap = el('div', 'animate-in');
   wrap.innerHTML = html;
   document.getElementById('tab-content').appendChild(wrap);
 }
-
+ 
 // ── Animated number ───────────────────────────────────────────────────────────
-
+ 
 function animateNumber(element, to, duration = 900, decimals = 0) {
   const from = parseFloat(element.dataset.from || '0');
   element.dataset.from = to;
   let start = null;
-
+ 
   function step(ts) {
     if (!start) start = ts;
     const progress = Math.min((ts - start) / duration, 1);
@@ -141,7 +141,7 @@ function animateNumber(element, to, duration = 900, decimals = 0) {
   }
   requestAnimationFrame(step);
 }
-
+ 
 function numSpan(value, decimals = 0) {
   const span = el('span');
   span.dataset.value = value;
@@ -149,7 +149,7 @@ function numSpan(value, decimals = 0) {
   span.textContent = decimals > 0 ? Number(value).toFixed(decimals) : Number(value).toLocaleString('ru-RU');
   return span;
 }
-
+ 
 function activateAnimations(container) {
   container.querySelectorAll('[data-value]').forEach(el => {
     animateNumber(el, parseFloat(el.dataset.value), 900, parseInt(el.dataset.decimals || '0'));
@@ -161,9 +161,9 @@ function activateAnimations(container) {
     setTimeout(() => animateRing(el, parseFloat(el.dataset.ring)), 80);
   });
 }
-
+ 
 // ── Level badge ───────────────────────────────────────────────────────────────
-
+ 
 const LEVEL_COLORS = {
   1:  { bg: '#2a2a2a', text: '#6b7280', glow: null },
   2:  { bg: '#2a2a2a', text: '#6b7280', glow: null },
@@ -176,11 +176,11 @@ const LEVEL_COLORS = {
   9:  { bg: '#2a0a0a', text: '#FF3B30', glow: 'rgba(255,59,48,0.35)' },
   10: { bg: '#1a0000', text: '#FF0000', glow: 'rgba(255,0,0,0.4)' },
 };
-
+ 
 function getLevelColor(level) {
   return (LEVEL_COLORS[Math.min(10, Math.max(1, level))] || LEVEL_COLORS[1]).text;
 }
-
+ 
 function levelBadgeHTML(level, size = 'md') {
   const lvl = Math.min(10, Math.max(1, level));
   const c = LEVEL_COLORS[lvl];
@@ -188,9 +188,9 @@ function levelBadgeHTML(level, size = 'md') {
   const style = `background:${c.bg};color:${c.text};border-color:${c.text}40;${c.glow ? `box-shadow:0 0 10px ${c.glow};` : ''}`;
   return `<span class="${cls}" style="${style}">${lvl}</span>`;
 }
-
+ 
 // ── Ring chart ────────────────────────────────────────────────────────────────
-
+ 
 function animateRing(svgEl, value) {
   const circle = svgEl.querySelector('.ring-fill');
   if (!circle) return;
@@ -199,7 +199,7 @@ function animateRing(svgEl, value) {
   const dash = (value / 100) * circ;
   circle.style.strokeDasharray = `${dash} ${circ}`;
 }
-
+ 
 function ringChartHTML(value, size = 52, stroke = 5) {
   const r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
@@ -224,9 +224,9 @@ function ringChartHTML(value, size = 52, stroke = 5) {
       <span style="font-size:10px;color:#a0a0a0;line-height:1;margin-top:2px">WR</span>
     </div>`;
 }
-
+ 
 // ── Map meta ──────────────────────────────────────────────────────────────────
-
+ 
 const MAP_META = {
   mirage:      { label: 'Mirage',      color: '#E8B847', emoji: '🏜️' },
   dust2:       { label: 'Dust 2',      color: '#C8A06A', emoji: '🏛️' },
@@ -244,16 +244,16 @@ function getMapMeta(name) {
   const key = (name || '').toLowerCase().replace(/\s/g, '');
   return MAP_META[key] || { label: name, color: '#FFD700', emoji: '🗺️' };
 }
-
+ 
 // ── Custom titles ─────────────────────────────────────────────────────────────
-
+ 
 const CUSTOM_TITLES = {
   legend: '🏆 Легенда', veteran: '⚔️ Ветеран',
   challenger: '🎯 Претендент', elite: '💎 Элита', predator: '🔥 Хищник',
 };
-
+ 
 // ── Level gradient (banner bg) ────────────────────────────────────────────────
-
+ 
 function levelGradient(level) {
   if (level <= 2) return 'linear-gradient(135deg,#1a1a1a,#2a2a2a)';
   if (level <= 4) return 'linear-gradient(135deg,#0a1a0a,#1a2a1a)';
@@ -261,24 +261,24 @@ function levelGradient(level) {
   if (level <= 8) return 'linear-gradient(135deg,#1a0e00,#2a1800)';
   return 'linear-gradient(135deg,#1a0000,#2a0808)';
 }
-
+ 
 function formatDate(str) {
   try { return new Date(str).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' }); }
   catch { return '—'; }
 }
-
+ 
 // ── Render PlayerView ─────────────────────────────────────────────────────────
-
+ 
 function renderPlayerStats(p, isProTab = false) {
   const data = isProTab ? p.proLeague : p;
   if (!data) return '';
-
+ 
   const mapStats = isProTab ? (p.proLeague?.mapStats || []) : (p.mapStats || []);
   const mapTitle = isProTab ? 'Карты — Pro League' : 'Статистика по картам';
-
+ 
   const eloCardClass = isProTab ? 'elo-card pro' : 'elo-card';
   const eloLabel = isProTab ? `Pro League ELO <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(255,140,0,.15);color:#FFA500;font-weight:700;margin-left:8px">#${data.rank}</span>` : 'ELO рейтинг';
-
+ 
   return `
     <div class="${eloCardClass}">
       <div class="elo-label">${eloLabel}</div>
@@ -290,7 +290,7 @@ function renderPlayerStats(p, isProTab = false) {
         </div>
       </div>
     </div>
-
+ 
     <div class="stats-grid">
       <div class="stat-card">
         <div class="label">Матчей</div>
@@ -308,7 +308,7 @@ function renderPlayerStats(p, isProTab = false) {
         ${ringChartHTML(data.winRate, 52, 5)}
       </div>
     </div>
-
+ 
     ${!isProTab ? `
     <div class="stats-grid3">
       <div class="stat-card stat-mini">
@@ -324,7 +324,7 @@ function renderPlayerStats(p, isProTab = false) {
         <div class="value"><span data-value="${p.assists}">0</span></div>
       </div>
     </div>` : ''}
-
+ 
     ${mapStats.length ? `
     <div class="map-section">
       <div class="section-title">${mapTitle}</div>
@@ -369,19 +369,19 @@ function renderPlayerStats(p, isProTab = false) {
     </div>` : ''}
   `;
 }
-
+ 
 function renderPlayer(player) {
   const bannerGradient = levelGradient(player.level);
   // Banner: store gradient in data attr to avoid quote escaping issues in onerror
   const bannerBg = player.bannerFileId
     ? `<div class="banner-bg banner-img-wrap" data-file-id="${player.bannerFileId}" data-gradient="${bannerGradient}"></div>`
     : `<div class="banner-bg" style="background:${bannerGradient}"></div>`;
-
+ 
   const rankColor = player.rank <= 3 ? '#FFD700' : '#ffffff';
-
+ 
   const lvlColor = getLevelColor(player.level);
   const avatarFallbackStyle = `background:${lvlColor}18;--tg-avatar-color:${lvlColor};border-color:${lvlColor}40`;
-
+ 
   const container = el('div');
   container.innerHTML = `
     <div class="player-banner">
@@ -407,7 +407,7 @@ function renderPlayer(player) {
       </div>
     </div>
   `;
-
+ 
   // League tabs if Pro League available
   let currentTab = 'default';
   if (player.hasProLeague && player.proLeague) {
@@ -418,7 +418,7 @@ function renderPlayer(player) {
     `;
     const statsDiv = el('div', 'league-stats');
     statsDiv.innerHTML = renderPlayerStats(player, false);
-
+ 
     tabsDiv.querySelectorAll('.league-tab').forEach(btn => {
       btn.addEventListener('click', () => {
         hapticSelect();
@@ -430,7 +430,7 @@ function renderPlayer(player) {
         activateAvatars(statsDiv);
       });
     });
-
+ 
     container.appendChild(tabsDiv);
     container.appendChild(statsDiv);
   } else {
@@ -438,7 +438,7 @@ function renderPlayer(player) {
     statsDiv.innerHTML = renderPlayerStats(player, false);
     container.appendChild(statsDiv);
   }
-
+ 
   // Extra cards
   if (player.customTitle || player.mvpCount > 0) {
     const extra = el('div', 'extra-card');
@@ -448,7 +448,7 @@ function renderPlayer(player) {
     `;
     container.appendChild(extra);
   }
-
+ 
   if (player.battlePass) {
     const bp = player.battlePass;
     const bpDiv = el('div', 'bp-card');
@@ -456,27 +456,27 @@ function renderPlayer(player) {
       <div class="bp-row">
         <div>
           <div class="bp-meta">Battle Pass</div>
-          <div class="bp-level">Уровень ${bp.bpLevel}<span>(${bp.bpWins} побед к следующему)</span></div>
+          <div class="bp-level">Уровень ${bp.bpLevel}<span>(${bp.winsToNext ?? bp.bpWins} побед к следующему)</span></div>
         </div>
         ${bp.isBought ? '<span class="tag tag-premium" style="font-size:10px;padding:4px 8px;">⚔️ КУПЛЕН</span>' : ''}
       </div>
     `;
     container.appendChild(bpDiv);
   }
-
+ 
   const dateDiv = el('div', 'joined-date');
   dateDiv.textContent = `В Faceit Arena с ${formatDate(player.createdAt)}`;
   container.appendChild(dateDiv);
-
+ 
   // Padding bottom
   const pad = el('div', '', ''); pad.style.height = '24px';
   container.appendChild(pad);
-
+ 
   const wrap = el('div', 'animate-in');
   wrap.appendChild(container);
   document.getElementById('tab-content').innerHTML = '';
   document.getElementById('tab-content').appendChild(wrap);
-
+ 
   // Load banner image
   const bannerWrap = wrap.querySelector('.banner-img-wrap[data-file-id]');
   if (bannerWrap) {
@@ -491,15 +491,15 @@ function renderPlayer(player) {
     img.src = `${API_BASE}/api/telegram-file?file_id=${fileId}`;
     bannerWrap.appendChild(img);
   }
-
+ 
   setTimeout(() => { activateAnimations(wrap); activateAvatars(wrap); }, 50);
 }
-
+ 
 // ── Render Leaderboard ────────────────────────────────────────────────────────
-
+ 
 let lbData = { default: null, pro: null };
 let lbLeague = 'default';
-
+ 
 async function renderLeaderboard() {
   const content = document.getElementById('tab-content');
   content.innerHTML = `
@@ -512,7 +512,7 @@ async function renderLeaderboard() {
   `;
   await loadLbData(lbLeague);
 }
-
+ 
 async function loadLbData(league) {
   if (lbData[league]) { renderLbBody(lbData[league], league); return; }
   document.getElementById('lb-body').innerHTML = skeletonList(10);
@@ -524,22 +524,22 @@ async function loadLbData(league) {
     document.getElementById('lb-body').innerHTML = `<div class="empty-state"><span class="emoji">⚠️</span><div class="title">Ошибка загрузки</div></div>`;
   }
 }
-
+ 
 function renderLbBody(data, league) {
   const top3 = data.slice(0, 3);
   const rest = data.slice(3);
   const myId = state.player?.id;
   const myPos = myId ? data.findIndex(d => d.id === myId) : -1;
-
+ 
   let html = '';
-
+ 
   // Podium
   if (top3.length >= 3) {
     const order = [top3[1], top3[0], top3[2]];
     const heights = [80, 110, 60];
     const medals = ['🥈', '🥇', '🥉'];
     const colors = ['#C0C0C0', '#FFD700', '#CD7F32'];
-
+ 
     html += `<div class="podium">`;
     order.forEach((entry, i) => {
       if (!entry) return;
@@ -560,7 +560,7 @@ function renderLbBody(data, league) {
     });
     html += `</div>`;
   }
-
+ 
   // My position banner
   if (myPos >= 3) {
     html += `
@@ -569,7 +569,7 @@ function renderLbBody(data, league) {
         <span class="my-pos-label">Ваша позиция</span>
       </div>`;
   }
-
+ 
   // Rest of list
   html += `<div class="lb-list">`;
   rest.forEach((entry, i) => {
@@ -599,13 +599,13 @@ function renderLbBody(data, league) {
       </div>`;
   });
   html += `</div>`;
-
+ 
   const body = document.getElementById('lb-body');
   if (body) { body.innerHTML = html; activateAvatars(body); }
 }
-
+ 
 // ── Render Search ─────────────────────────────────────────────────────────────
-
+ 
 function renderSearch() {
   const content = document.getElementById('tab-content');
   content.innerHTML = `
@@ -624,22 +624,22 @@ function renderSearch() {
     </div>
     <div id="search-results"></div>
   `;
-
+ 
   const input = document.getElementById('search-input');
   const box = document.getElementById('search-box');
-
+ 
   input.addEventListener('focus', () => box.classList.add('focused'));
   input.addEventListener('blur',  () => box.classList.remove('focused'));
   input.addEventListener('input', () => {
     App.onSearchInput(input.value);
   });
-
+ 
   renderSearchResults('', [], false);
 }
-
+ 
 let searchTimer = null;
 let lastSearchQuery = '';
-
+ 
 async function doSearch(q) {
   if (q.length < 2) { renderSearchResults(q, [], false); return; }
   const spinner = document.getElementById('search-spinner');
@@ -656,11 +656,11 @@ async function doSearch(q) {
     if (icon) icon.style.display = '';
   }
 }
-
+ 
 function renderSearchResults(q, results, searched) {
   const container = document.getElementById('search-results');
   if (!container) return;
-
+ 
   if (!q) {
     container.innerHTML = `<div class="empty-state"><span class="emoji">👾</span><div class="title">Введите никнейм</div><div class="sub">минимум 2 символа</div></div>`;
     return;
@@ -670,7 +670,7 @@ function renderSearchResults(q, results, searched) {
     return;
   }
   if (!searched) return;
-
+ 
   let html = `<div class="search-results"><div class="search-count">Найдено: ${results.length}</div>`;
   results.forEach((p, i) => {
     const lvlColor = getLevelColor(p.level);
@@ -703,17 +703,17 @@ function renderSearchResults(q, results, searched) {
   container.innerHTML = html;
   activateAvatars(container);
 }
-
+ 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
-
+ 
 function skeletonList(n) {
   return Array.from({ length: n }, () =>
     `<div style="height:64px;margin:0 16px 8px;border-radius:12px" class="skeleton"></div>`
   ).join('');
 }
-
+ 
 // ── Not registered ────────────────────────────────────────────────────────────
-
+ 
 function renderNotRegistered() {
   document.getElementById('tab-content').innerHTML = `
     <div class="not-registered">
@@ -725,19 +725,19 @@ function renderNotRegistered() {
       </div>
     </div>`;
 }
-
+ 
 // ── Tab switching ─────────────────────────────────────────────────────────────
-
+ 
 function updateNavButtons(activeTab) {
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tab === activeTab);
   });
 }
-
+ 
 // ── Main App object ───────────────────────────────────────────────────────────
-
+ 
 window.App = {
-
+ 
   switchTab(tab) {
     hapticSelect();
     state.tab = tab;
@@ -745,7 +745,7 @@ window.App = {
     state.viewedPlayer = null;
     document.getElementById('back-btn').classList.add('hidden');
     updateNavButtons(tab);
-
+ 
     if (tab === 'profile') {
       if (state.player) renderPlayer(state.player);
       else renderNotRegistered();
@@ -753,9 +753,11 @@ window.App = {
       renderLeaderboard();
     } else if (tab === 'search') {
       renderSearch();
+    } else if (tab === 'quests') {
+      renderQuests();
     }
   },
-
+ 
   switchLbTab(league) {
     hapticSelect();
     lbLeague = league;
@@ -763,7 +765,7 @@ window.App = {
     document.getElementById(`lb-tab-${league}`)?.classList.add('active');
     loadLbData(league);
   },
-
+ 
   async viewPlayer(nickname) {
     haptic('light');
     if (nickname === state.player?.gameNickname) {
@@ -774,7 +776,7 @@ window.App = {
     state.tab = 'profile';
     updateNavButtons('profile');
     document.getElementById('back-btn').classList.remove('hidden');
-
+ 
     // Show skeleton
     document.getElementById('tab-content').innerHTML = `
       <div style="height:40px"></div>
@@ -785,7 +787,7 @@ window.App = {
           ${Array(4).fill('<div style="height:64px;border-radius:12px" class="skeleton"></div>').join('')}
         </div>
       </div>`;
-
+ 
     try {
       const player = await apiGet(`/api/player/${encodeURIComponent(nickname)}`);
       state.viewedPlayer = player;
@@ -800,7 +802,7 @@ window.App = {
         </div>`;
     }
   },
-
+ 
   goBack() {
     haptic('light');
     state.viewedNick = null;
@@ -809,33 +811,116 @@ window.App = {
     if (state.player) renderPlayer(state.player);
     else renderNotRegistered();
   },
-
+ 
   clearSearch() {
     const input = document.getElementById('search-input');
     if (input) { input.value = ''; input.focus(); }
     document.getElementById('search-clear').style.display = 'none';
     renderSearchResults('', [], false);
   },
-
+ 
   onSearchInput(q) {
     const clearBtn = document.getElementById('search-clear');
     if (clearBtn) clearBtn.style.display = q ? '' : 'none';
-
+ 
     clearTimeout(searchTimer);
     if (q.length < 2) { renderSearchResults(q, [], false); return; }
     searchTimer = setTimeout(() => doSearch(q), 300);
   },
 };
-
+ 
 // ── Boot ──────────────────────────────────────────────────────────────────────
-
+ 
+ 
+// ── Quests Tab ────────────────────────────────────────────────────────────────
+ 
+async function renderQuests() {
+  const content = document.getElementById('tab-content');
+  content.innerHTML = `<div style="padding:16px">${skeletonList(3)}</div>`;
+ 
+  let data;
+  try {
+    data = await apiPost('/api/quests', { initData: state.initData });
+  } catch (e) {
+    content.innerHTML = `<div class="not-registered" style="margin-top:60px"><div style="font-size:32px">⚠️</div><div>Ошибка загрузки заданий</div></div>`;
+    return;
+  }
+ 
+  const { battlePass: bp, quests } = data;
+ 
+  // ── BP Card
+  let bpHtml = '';
+  if (bp) {
+    const prog = bp.bpWins;
+    const total = bp.threshold;
+    const pct = Math.min(100, Math.round((prog / total) * 100));
+    const lvlColor = bp.isBought ? '#FFA500' : '#aaa';
+    bpHtml = `
+      <div class="bp-card" style="margin-bottom:16px">
+        <div class="bp-row" style="margin-bottom:10px">
+          <div>
+            <div class="bp-meta">Battle Pass ${bp.isBought ? '⚔️' : '🆓'}</div>
+            <div class="bp-level" style="font-size:20px;font-weight:700;color:${lvlColor}">
+              Уровень ${bp.bpLevel} <span style="font-size:12px;color:var(--text-secondary);font-weight:400">/ ${bp.maxLevel}</span>
+            </div>
+          </div>
+          ${bp.isBought ? '<span class="tag tag-premium" style="font-size:10px;padding:4px 8px;">⚔️ КУПЛЕН</span>' : ''}
+        </div>
+        <div style="background:rgba(255,255,255,0.08);border-radius:8px;height:8px;overflow:hidden;margin-bottom:6px">
+          <div style="background:${lvlColor};height:100%;width:${pct}%;transition:width 0.6s ease;border-radius:8px"></div>
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary)">
+          ${prog} / ${total} побед до следующего уровня
+        </div>
+      </div>`;
+  }
+ 
+  // ── Quest cards
+  const statusLabel = { active: '', completed: '✅ Выполнено', claimed: '🎁 Получено' };
+  const statusColor = { active: 'var(--text-secondary)', completed: '#4CAF50', claimed: '#888' };
+ 
+  const questsHtml = quests.length ? quests.map(q => {
+    const pct = Math.min(100, Math.round(((q.progress || 0) / q.target) * 100));
+    const isDone = q.status !== 'active';
+    return `
+      <div style="background:var(--card-bg);border-radius:14px;padding:14px 16px;margin-bottom:10px;opacity:${q.status==='claimed'?0.5:1}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="font-size:26px">${q.icon}</div>
+            <div>
+              <div style="font-weight:600;font-size:14px">${q.title}</div>
+              <div style="font-size:12px;color:${statusColor[q.status]};margin-top:2px">
+                ${statusLabel[q.status] || `${q.progress || 0} / ${q.target}`}
+              </div>
+            </div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-weight:700;color:#FFA500;font-size:14px">+${q.reward} ACF</div>
+          </div>
+        </div>
+        ${!isDone ? `
+          <div style="background:rgba(255,255,255,0.08);border-radius:6px;height:6px;overflow:hidden">
+            <div style="background:#FFA500;height:100%;width:${pct}%;border-radius:6px;transition:width 0.5s ease"></div>
+          </div>` : ''}
+      </div>`;
+  }).join('') : `<div style="text-align:center;color:var(--text-secondary);padding:24px">Задания ещё не созданы</div>`;
+ 
+  content.innerHTML = `
+    <div style="padding:16px 16px 80px">
+      <div style="font-size:18px;font-weight:700;margin-bottom:14px">📋 Задания</div>
+      ${bpHtml}
+      <div style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Ежедневные задания</div>
+      ${questsHtml}
+    </div>`;
+}
+ 
 async function boot() {
   const splash = document.getElementById('splash');
   const app    = document.getElementById('app');
-
+ 
   try {
     const initData = tg?.initData || '';
-
+ 
     if (!initData) {
       // Dev mode — no Telegram
       splash.classList.add('fade-out');
@@ -843,20 +928,21 @@ async function boot() {
       renderNotRegistered();
       return;
     }
-
+ 
     const data = await apiPost('/api/me', { initData });
     state.player = data.player;
     state.tgUser = data.tgUser;
-
+    state.initData = initData;
+ 
     splash.classList.add('fade-out');
     app.classList.remove('hidden');
     renderPlayer(data.player);
     activateAvatars(document.getElementById('tab-content'));
-
+ 
   } catch (e) {
     splash.classList.add('fade-out');
     app.classList.remove('hidden');
-
+ 
     if (e.status === 404) renderNotRegistered();
     else {
       document.getElementById('tab-content').innerHTML = `
@@ -870,5 +956,5 @@ async function boot() {
     }
   }
 }
-
+ 
 boot();
