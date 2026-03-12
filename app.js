@@ -533,8 +533,9 @@ function renderLbBody(data, league) {
  
   let html = '';
  
-  // Podium
-  if (top3.length >= 3) {
+  // Podium — only if at least 3 players
+  const showPodium = top3.length >= 3;
+  if (showPodium) {
     const order = [top3[1], top3[0], top3[2]];
     const heights = [80, 110, 60];
     const medals = ['🥈', '🥇', '🥉'];
@@ -570,9 +571,10 @@ function renderLbBody(data, league) {
       </div>`;
   }
  
-  // Rest of list
+  // Rest of list — if no podium, show everyone; otherwise from rank 4
+  const listEntries = showPodium ? rest : data;
   html += `<div class="lb-list">`;
-  rest.forEach((entry, i) => {
+  listEntries.forEach((entry, i) => {
     const isMine = entry.id === myId;
     const lvlColor = getLevelColor(entry.level);
     const delay = Math.min(i * 30, 500);
