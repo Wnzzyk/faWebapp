@@ -331,14 +331,14 @@ function renderPlayerStats(p, isProTab = false) {
     <div class="map-section">
       <div class="section-title">${mapTitle}</div>
       <div class="map-list">
-        ${mapStats.map(m => {
+        ${(() => { window._mapStatsCache = mapStats; return mapStats; })().map((m, idx) => {
           const meta = getMapMeta(m.mapName);
           const kda = m.deaths > 0
             ? ((m.kills + m.assists * 0.5) / m.deaths).toFixed(2)
             : String(m.kills);
           const wrCls = m.winRate >= 50 ? 'good' : 'bad';
           return `
-          <div class="map-card" onclick="showMapDetail(${JSON.stringify(m)})" style="cursor:pointer">
+          <div class="map-card" data-mapidx="${idx}" style="cursor:pointer">
             <div class="map-card-header">
               <div class="map-name-row">
                 <span class="map-emoji">${meta.emoji}</span>
@@ -420,6 +420,7 @@ function renderPlayer(player) {
     `;
     const statsDiv = el('div', 'league-stats');
     statsDiv.innerHTML = renderPlayerStats(player, false);
+    attachMapCardHandlers(statsDiv);
  
     tabsDiv.querySelectorAll('.league-tab').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -428,6 +429,7 @@ function renderPlayer(player) {
         tabsDiv.querySelectorAll('.league-tab').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         statsDiv.innerHTML = renderPlayerStats(player, currentTab === 'pro');
+        attachMapCardHandlers(statsDiv);
         activateAnimations(statsDiv);
         activateAvatars(statsDiv);
       });
@@ -438,6 +440,7 @@ function renderPlayer(player) {
   } else {
     const statsDiv = el('div');
     statsDiv.innerHTML = renderPlayerStats(player, false);
+    attachMapCardHandlers(statsDiv);
     container.appendChild(statsDiv);
   }
  
@@ -838,6 +841,17 @@ window.App = {
  
  
 // ── Map Detail Modal ──────────────────────────────────────────────────────────
+ 
+ 
+function attachMapCardHandlers(container) {
+  container.querySelectorAll('.map-card[data-mapidx]').forEach(card => {
+    card.addEventListener('click', () => {
+      const idx = parseInt(card.dataset.mapidx);
+      const m = window._mapStatsCache?.[idx];
+      if (m) showMapDetail(m);
+    });
+  });
+}
  
 function showMapDetail(m) {
   haptic('light');
