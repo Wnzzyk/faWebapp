@@ -325,6 +325,8 @@ function renderPlayerStats(p, isProTab = false) {
       </div>
     </div>` : ''}
  
+    ${!isProTab && p.recentMatches?.length ? renderMatchHistory(p.recentMatches) : ''}
+ 
     ${mapStats.length ? `
     <div class="map-section">
       <div class="section-title">${mapTitle}</div>
@@ -336,7 +338,7 @@ function renderPlayerStats(p, isProTab = false) {
             : String(m.kills);
           const wrCls = m.winRate >= 50 ? 'good' : 'bad';
           return `
-          <div class="map-card">
+          <div class="map-card" onclick="showMapDetail(${JSON.stringify(m)})" style="cursor:pointer">
             <div class="map-card-header">
               <div class="map-name-row">
                 <span class="map-emoji">${meta.emoji}</span>
@@ -834,6 +836,87 @@ window.App = {
 // ── Boot ──────────────────────────────────────────────────────────────────────
  
  
+ 
+// ── Map Detail Modal ──────────────────────────────────────────────────────────
+ 
+function showMapDetail(m) {
+  haptic('light');
+  const meta = getMapMeta(m.mapName);
+  const kda = m.deaths > 0 ? ((m.kills + m.assists * 0.5) / m.deaths).toFixed(2) : String(m.kills);
+  const wrCls = m.winRate >= 50 ? 'good' : 'bad';
+  const ddRatio = m.deaths > 0 ? (m.kills / m.deaths).toFixed(2) : '∞';
+  const avgDeaths = m.matches > 0 ? (m.deaths / m.matches).toFixed(1) : '0';
+  const avgAssists = m.matches > 0 ? (m.assists / m.matches).toFixed(1) : '0';
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;z-index:999;display:flex;align-items:flex-end;background:rgba(0,0,0,.6);backdrop-filter:blur(6px)';
+  modal.innerHTML = `
+    <div style="background:var(--card-bg);border-radius:20px 20px 0 0;width:100%;padding:20px 20px 36px;animation:slideUp .25s ease">
+      <div style="width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 18px"></div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+        <span style="font-size:36px">${meta.emoji}</span>
+        <div>
+          <div style="font-size:18px;font-weight:700">${meta.label}</div>
+          <div style="font-size:13px;color:var(--text-secondary)">${m.matches} матчей сыграно</div>
+        </div>
+        <span class="wr-badge ${wrCls}" style="margin-left:auto">${m.winRate}% WR</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
+        ${[
+          ['Победы','#34C759',m.wins],
+          ['Поражения','#FF3B30',m.losses],
+          ['KDA',meta.color,kda],
+          ['AVG Kills','#a0a0a0',m.avgKills.toFixed(1)],
+          ['AVG Deaths','#a0a0a0',avgDeaths],
+          ['AVG Assists','#a0a0a0',avgAssists],
+        ].map(([lbl,clr,val]) => `
+          <div style="background:rgba(255,255,255,.05);border-radius:12px;padding:12px;text-align:center">
+            <div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px">${lbl}</div>
+            <div style="font-size:18px;font-weight:700;color:${clr}">${val}</div>
+          </div>`).join('')}
+      </div>
+      <div style="background:rgba(255,255,255,.05);border-radius:12px;padding:14px;margin-bottom:14px">
+        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px">Прогресс побед</div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+          <span style="color:#34C759">${m.wins} побед</span>
+          <span style="color:#FF3B30">${m.losses} поражений</span>
+        </div>
+        <div style="background:rgba(255,255,255,.1);border-radius:6px;height:10px;overflow:hidden">
+          <div style="background:linear-gradient(90deg,#34C759,#30D158);height:100%;width:${m.winRate}%;border-radius:6px;transition:width .6s ease"></div>
+        </div>
+      </div>
+      <div style="font-size:13px;color:var(--text-secondary);text-align:center">Всего убийств: <b style="color:var(--text)">${m.kills}</b> • Смертей: <b style="color:var(--text)">${m.deaths}</b> • Ассисты: <b style="color:var(--text)">${m.assists}</b></div>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+ 
+// ── Match History ─────────────────────────────────────────────────────────────
+ 
+function renderMatchHistory(matches) {
+  if (!matches || !matches.length) return '';
+  const pills = matches.map(m => {
+    const meta = getMapMeta(m.map);
+    const clr = m.won ? '#34C759' : '#FF3B30';
+    const bg  = m.won ? 'rgba(52,199,89,.15)' : 'rgba(255,59,48,.12)';
+    const elo = m.eloChange >= 0 ? `+${m.eloChange}` : String(m.eloChange);
+    const eloClr = m.eloChange > 0 ? '#34C759' : m.eloChange < 0 ? '#FF3B30' : '#888';
+    return `
+      <div style="background:${bg};border:1px solid ${clr}25;border-radius:10px;padding:8px 10px;min-width:54px;text-align:center;flex-shrink:0;cursor:pointer" title="${meta.label} ${m.scoreT}:${m.scoreCT}">
+        <div style="font-size:11px;color:${clr};font-weight:700">${m.won ? 'W' : 'L'}</div>
+        <div style="font-size:16px">${meta.emoji}</div>
+        <div style="font-size:10px;color:${eloClr};font-weight:600">${elo}</div>
+        <div style="font-size:9px;color:var(--text-secondary)">${m.kills}/${m.deaths}</div>
+      </div>`;
+  }).join('');
+  return `
+    <div class="map-section">
+      <div class="section-title">История матчей</div>
+      <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none">
+        ${pills}
+      </div>
+    </div>`;
+}
+ 
 // ── Quests Tab ────────────────────────────────────────────────────────────────
  
 async function renderQuests() {
@@ -871,9 +954,14 @@ async function renderQuests() {
         <div style="background:rgba(255,255,255,0.08);border-radius:8px;height:8px;overflow:hidden;margin-bottom:6px">
           <div style="background:${lvlColor};height:100%;width:${pct}%;transition:width 0.6s ease;border-radius:8px"></div>
         </div>
-        <div style="font-size:12px;color:var(--text-secondary)">
-          ${prog} / ${total} побед до следующего уровня
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:14px">
+          <span>${prog} / ${total} побед</span>
+          <span style="color:${lvlColor}">${bp.winsToNext} до след. уровня</span>
         </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">
+          ${[['Уровень', lvlColor, bp.bpLevel + ' / ' + bp.maxLevel],['Побед сыграно', '#a0a0a0', prog],['След. награда', '#FFA500', (bp.isBought ? [20,30,40,50] : [10,15,20,25])[bp.bpLevel % 4] + ' ACF']].map(([l,c,v]) => `<div style="background:rgba(255,255,255,.05);border-radius:10px;padding:10px;text-align:center"><div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px">${l}</div><div style="font-size:15px;font-weight:700;color:${c}">${v}</div></div>`).join('')}
+        </div>
+        ${!bp.isBought ? `<div style="font-size:11px;color:#888;text-align:center;padding:6px 0">💡 Купи Battle Pass для увеличенных наград</div>` : `<div style="font-size:11px;color:#FFA500;text-align:center;padding:6px 0">⚔️ Расширенные награды активны</div>`}
       </div>`;
   }
  
