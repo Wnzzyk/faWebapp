@@ -913,6 +913,34 @@ async function renderPlayer(player) {
     container.appendChild(bpDiv);
   }
 
+  // Season card
+  if (player.season) {
+    const s = player.season;
+    const sWr = s.matches > 0 ? Math.round(s.wins / s.matches * 100) : 0;
+    const sKd = s.deaths > 0 ? (s.kills / s.deaths).toFixed(2) : String(s.kills || 0);
+    const sDiv = el('div', 'bp-card');
+    sDiv.innerHTML = `
+      <div class="bp-row">
+        <div>
+          <div class="bp-meta">🏆 Сезон ${s.name}</div>
+          <div class="bp-level">
+            Матчей: <b>${s.matches}</b> &nbsp;·&nbsp;
+            Побед: <b>${s.wins}</b> &nbsp;·&nbsp;
+            WR: <b>${sWr}%</b>
+          </div>
+          <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">
+            Пик ELO: <b style="color:#FFD700">${s.eloPeak}</b> &nbsp;·&nbsp;
+            K/D: <b>${sKd}</b>
+          </div>
+        </div>
+        <span class="tag" style="background:rgba(255,215,0,.15);color:#FFD700;border-color:rgba(255,215,0,.3);font-size:10px;padding:4px 8px;white-space:nowrap">
+          🔥 АКТИВНЫЙ
+        </span>
+      </div>
+    `;
+    container.appendChild(sDiv);
+  }
+
   const dateDiv = el('div', 'joined-date');
   dateDiv.textContent = `В Faceit Arena с ${formatDate(player.createdAt)}`;
   container.appendChild(dateDiv);
@@ -1602,6 +1630,13 @@ async function boot() {
     app.classList.remove('hidden');
     renderPlayer(data.player);
     activateAvatars(document.getElementById('tab-content'));
+
+    // Обработка startapp параметра (например match_123)
+    const startParam = tg?.initDataUnsafe?.start_param || '';
+    if (startParam.startsWith('match_')) {
+      const matchId = startParam.replace('match_', '');
+      if (matchId) setTimeout(() => openMatchDetail(matchId), 400);
+    }
 
   } catch (e) {
     splash.classList.add('fade-out');
