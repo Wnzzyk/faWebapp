@@ -393,6 +393,10 @@ function renderMatchHistory(matches) {
     const bg  = m.won ? 'rgba(52,199,89,.15)' : 'rgba(255,59,48,.12)';
     const elo = m.eloChange >= 0 ? `+${m.eloChange}` : String(m.eloChange);
     const eloClr = m.eloChange > 0 ? '#34C759' : m.eloChange < 0 ? '#FF3B30' : '#888';
+    // Bug 8: league badge
+    const leagueBadge = m.isProLeague
+      ? `<div style="font-size:8px;color:#FFA500;font-weight:700;line-height:1.2">PRO</div>`
+      : `<div style="font-size:8px;color:#a0a0a0;line-height:1.2">DEF</div>`;
     return `
       <div class="match-pill" data-matchid="${m.matchId}"
            style="background:${bg};border:1px solid ${clr}25;border-radius:10px;padding:8px 10px;min-width:54px;text-align:center;flex-shrink:0;cursor:pointer">
@@ -400,6 +404,7 @@ function renderMatchHistory(matches) {
         <div style="font-size:16px">${meta.emoji}</div>
         <div style="font-size:10px;color:${eloClr};font-weight:600">${elo}</div>
         <div style="font-size:9px;color:var(--text-secondary)">${m.kills}/${m.deaths}</div>
+        ${leagueBadge}
       </div>`;
   }).join('');
   return `
@@ -488,6 +493,11 @@ async function openMatchDetail(matchId) {
       ? new Date(m.finishedAt).toLocaleDateString('ru-RU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })
       : '';
 
+    // Bug 8: league label badge
+    const leagueBadgeHTML = m.isProLeague
+      ? `<span style="display:inline-block;padding:2px 7px;border-radius:5px;background:rgba(255,165,0,.15);color:#FFA500;font-size:10px;font-weight:700;border:1px solid rgba(255,165,0,.3)">🏅 Pro League</span>`
+      : `<span style="display:inline-block;padding:2px 7px;border-radius:5px;background:rgba(255,255,255,.07);color:#a0a0a0;font-size:10px;font-weight:600;border:1px solid rgba(255,255,255,.1)">🎮 Default</span>`;
+
     const sheet = modal.querySelector('div[style*="border-radius:20px"]');
     sheet.innerHTML = `
       <div style="width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 18px"></div>
@@ -497,7 +507,8 @@ async function openMatchDetail(matchId) {
         <div style="font-size:40px;line-height:1">${meta.emoji}</div>
         <div style="flex:1">
           <div style="font-size:17px;font-weight:700">${meta.label}</div>
-          <div style="font-size:12px;color:var(--text-secondary)">${m.matchNumber || ''} ${finDate ? '• ' + finDate : ''}</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">${m.matchNumber || ''} ${finDate ? '• ' + finDate : ''}</div>
+          <div style="margin-top:5px">${leagueBadgeHTML}</div>
         </div>
         <div style="text-align:center">
           <div style="font-size:28px;font-weight:900;letter-spacing:2px;line-height:1">
