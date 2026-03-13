@@ -1631,12 +1631,11 @@ async function boot() {
     renderPlayer(data.player);
     activateAvatars(document.getElementById('tab-content'));
 
-    // Обработка startapp параметра (например match_123)
+    // Обработка параметра матча из URL (?match=123) — приоритет над start_param
+    const urlMatch = new URLSearchParams(window.location.search).get('match');
     const startParam = tg?.initDataUnsafe?.start_param || '';
-    if (startParam.startsWith('match_')) {
-      const matchId = startParam.replace('match_', '');
-      if (matchId) setTimeout(() => openMatchDetail(matchId), 400);
-    }
+    const matchId = urlMatch || (startParam.startsWith('match_') ? startParam.replace('match_', '') : '');
+    if (matchId) setTimeout(() => openMatchDetail(matchId), 400);
 
   } catch (e) {
     splash.classList.add('fade-out');
