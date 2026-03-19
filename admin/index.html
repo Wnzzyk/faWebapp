@@ -150,7 +150,7 @@ a { color: inherit; text-decoration: none; }
 
 /* ── Panels ────────────────────────────────────────────────────────────────── */
 .panel { display: none; }
-.panel.active { display: block; }
+#panel-dashboard { display: block; }
 
 /* ── Stat cards ────────────────────────────────────────────────────────────── */
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; }
@@ -592,9 +592,22 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 const API = 'https://faceit-api.wenzzyk.workers.dev';
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// AUTH
+// AUTH — используем sessionStorage вместо localStorage (работает в WebApp)
 // ═══════════════════════════════════════════════════════════════════════════════
-let _token = localStorage.getItem('admin_token') || '';
+let _token = '';
+
+// Пробуем sessionStorage, если не работает — просто храним в памяти
+try { _token = sessionStorage.getItem('admin_token') || ''; } catch(e) { _token = ''; }
+
+function _saveToken(t) {
+  _token = t;
+  try { sessionStorage.setItem('admin_token', t); } catch(e) {}
+}
+
+function _clearToken() {
+  _token = '';
+  try { sessionStorage.removeItem('admin_token'); } catch(e) {}
+}
 
 function authHeaders() {
   return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${_token}` };
@@ -622,11 +635,10 @@ async function doLogin() {
       err.classList.add('show');
       return;
     }
-    _token = data.token;
-    localStorage.setItem('admin_token', _token);
+    _saveToken(data.token);
     bootApp();
-  } catch {
-    err.textContent = 'Сервер недоступен';
+  } catch(e) {
+    err.textContent = 'Сервер недоступен: ' + e.message;
     err.classList.add('show');
   } finally {
     btn.disabled = false; btn.textContent = 'Войти';
@@ -634,8 +646,7 @@ async function doLogin() {
 }
 
 function doLogout() {
-  _token = '';
-  localStorage.removeItem('admin_token');
+  _clearToken();
   document.getElementById('app').classList.remove('visible');
   document.getElementById('login-screen').style.display = 'flex';
 }
@@ -654,7 +665,7 @@ function bootApp() {
   navigateTo('dashboard');
 }
 
-// Auto-login if token stored
+// Авто-логин если токен есть в сессии
 if (_token) bootApp();
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -669,8 +680,9 @@ document.querySelectorAll('.nav-item').forEach(el => {
 function navigateTo(page) {
   document.querySelectorAll('.nav-item').forEach(el =>
     el.classList.toggle('active', el.dataset.page === page));
-  document.querySelectorAll('.panel').forEach(el =>
-    el.classList.toggle('active', el.id === `panel-${page}`));
+  document.querySelectorAll('.panel').forEach(el => {
+    el.style.display = el.id === `panel-${page}` ? 'block' : 'none';
+  });
   document.getElementById('topbar-title').textContent = PAGE_TITLES[page] || page;
 
   if (page === 'dashboard') loadDashboard();
@@ -1217,4 +1229,4 @@ function renderPagination(containerId, current, total, fn) {
 }
 </script>
 </body>
-      </html>
+  </html>
