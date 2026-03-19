@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel — Faceit Arena</title>
+<style>
+:root {
+  --bg:            #0d0d0d;
+  --surface:       #161616;
+  --surface2:      #1e1e1e;
+  --surface3:      #262626;
+  --border:        rgba(255,255,255,0.07);
+  --accent:        #FF6B00;
+  --accent-dim:    rgba(255,107,0,0.12);
+  --accent-border: rgba(255,107,0,0.25);
+  --text:          #ffffff;
+  --text-muted:    #6b7280;
+  --text-dim:      #3a3a3a;
+  --green:         #34C759;
+  --red:           #FF3B30;
+  --yellow:        #FFD700;
+  --sidebar-w:     220px;
+}
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+button { border: none; background: none; cursor: pointer; color: inherit; font: inherit; }
+input, select, textarea { font: inherit; color: inherit; }
+a { color: inherit; text-decoration: none; }
+
+/* ── Login ─────────────────────────────────────────────────────────────────── */
+#login-screen {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100dvh;
+  background: radial-gradient(ellipse at center, rgba(255,107,0,0.05) 0%, transparent 70%);
+}
+.login-box {
+  width: 340px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 36px 32px;
+  display: flex; flex-direction: column; gap: 20px;
+}
+.login-logo {
+  width: 56px; height: 56px; border-radius: 16px;
+  background: var(--accent-dim); border: 1px solid var(--accent-border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; margin: 0 auto 4px;
+}
+.login-title  { text-align: center; font-size: 18px; font-weight: 800; }
+.login-sub    { text-align: center; font-size: 12px; color: var(--text-muted); margin-top: -12px; }
+.field-group  { display: flex; flex-direction: column; gap: 6px; }
+.field-label  { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; }
+.field-input {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 14px;
+  font-size: 14px; outline: none; transition: border-color .2s;
+}
+.field-input:focus { border-color: var(--accent); }
+.btn-primary {
+  background: var(--accent); color: #fff;
+  border-radius: 12px; padding: 12px;
+  font-size: 14px; font-weight: 700;
+  transition: opacity .15s, transform .1s;
+}
+.btn-primary:hover  { opacity: .9; }
+.btn-primary:active { transform: scale(.98); }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+.login-error {
+  background: rgba(255,59,48,.1); border: 1px solid rgba(255,59,48,.2);
+  border-radius: 10px; padding: 10px 14px;
+  color: var(--red); font-size: 13px; text-align: center;
+  display: none;
+}
+.login-error.show { display: block; }
+
+/* ── App shell ─────────────────────────────────────────────────────────────── */
+#app { display: none; min-height: 100dvh; }
+#app.visible { display: flex; }
+
+/* ── Sidebar ───────────────────────────────────────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  position: fixed; left: 0; top: 0; bottom: 0;
+  z-index: 40;
+}
+.sidebar-head {
+  padding: 20px 16px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.sidebar-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: var(--accent-dim); border: 1px solid var(--accent-border);
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+}
+.sidebar-brand { font-size: 13px; font-weight: 800; line-height: 1.2; }
+.sidebar-brand span { display: block; font-size: 10px; color: var(--text-muted); font-weight: 400; }
+.sidebar-nav { flex: 1; padding: 10px 8px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: 10px;
+  font-size: 13px; font-weight: 500; color: var(--text-muted);
+  cursor: pointer; transition: background .15s, color .15s;
+}
+.nav-item:hover    { background: var(--surface2); color: var(--text); }
+.nav-item.active   { background: var(--accent-dim); color: var(--accent); }
+.nav-item .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+.nav-section { font-size: 10px; color: var(--text-dim); font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; padding: 10px 12px 4px; }
+.sidebar-foot {
+  padding: 12px 8px;
+  border-top: 1px solid var(--border);
+}
+.logout-btn {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: 10px; width: 100%;
+  font-size: 13px; color: var(--text-muted);
+  transition: background .15s, color .15s;
+}
+.logout-btn:hover { background: rgba(255,59,48,.08); color: var(--red); }
+
+/* ── Main content ──────────────────────────────────────────────────────────── */
+.main {
+  margin-left: var(--sidebar-w);
+  flex: 1; min-height: 100dvh;
+  display: flex; flex-direction: column;
+}
+.topbar {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface);
+  position: sticky; top: 0; z-index: 30;
+}
+.topbar-title { font-size: 16px; font-weight: 800; }
+.topbar-meta  { font-size: 12px; color: var(--text-muted); }
+.page-content { padding: 24px; flex: 1; }
+
+/* ── Panels ────────────────────────────────────────────────────────────────── */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ── Stat cards ────────────────────────────────────────────────────────────── */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px;
+}
+.stat-card-label { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; }
+.stat-card-value { font-size: 26px; font-weight: 900; }
+.stat-card-value.accent { color: var(--accent); }
+.stat-card-value.green  { color: var(--green);  }
+.stat-card-value.red    { color: var(--red);    }
+.stat-card-value.yellow { color: var(--yellow); }
+
+/* ── Cards / sections ──────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden; margin-bottom: 16px;
+}
+.card-head {
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-title { font-size: 13px; font-weight: 700; }
+.card-body  { padding: 16px 18px; }
+
+/* ── Table ─────────────────────────────────────────────────────────────────── */
+.tbl-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 10px 14px; white-space: nowrap; }
+th { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+     color: var(--text-muted); border-bottom: 1px solid var(--border); }
+td { font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.02); }
+
+/* ── Search bar ────────────────────────────────────────────────────────────── */
+.search-row {
+  display: flex; gap: 10px; margin-bottom: 16px; align-items: center; flex-wrap: wrap;
+}
+.search-input {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 9px 14px;
+  font-size: 13px; outline: none; flex: 1; min-width: 180px;
+  transition: border-color .2s;
+}
+.search-input:focus { border-color: var(--accent); }
+
+/* ── Badges ────────────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600;
+}
+.badge-green  { background: rgba(52,199,89,.15);  color: var(--green); }
+.badge-red    { background: rgba(255,59,48,.15);   color: var(--red); }
+.badge-yellow { background: rgba(255,215,0,.15);   color: var(--yellow); }
+.badge-orange { background: rgba(255,107,0,.15);   color: var(--accent); }
+.badge-gray   { background: var(--surface3);       color: var(--text-muted); }
+
+/* ── Action buttons ────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 8px;
+  font-size: 12px; font-weight: 600;
+  transition: opacity .15s;
+}
+.btn:hover { opacity: .8; }
+.btn-sm    { padding: 4px 9px; font-size: 11px; }
+.btn-accent { background: var(--accent-dim); border: 1px solid var(--accent-border); color: var(--accent); }
+.btn-danger { background: rgba(255,59,48,.1); border: 1px solid rgba(255,59,48,.2); color: var(--red); }
+.btn-green  { background: rgba(52,199,89,.1); border: 1px solid rgba(52,199,89,.2); color: var(--green); }
+.btn-ghost  { background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); }
+
+/* ── Pagination ────────────────────────────────────────────────────────────── */
+.pagination {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 0 0; justify-content: flex-end;
+}
+.page-btn {
+  padding: 5px 11px; border-radius: 8px; font-size: 12px; font-weight: 600;
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted);
+  cursor: pointer; transition: background .15s;
+}
+.page-btn:hover { background: var(--surface3); color: var(--text); }
+.page-btn.active { background: var(--accent-dim); border-color: var(--accent-border); color: var(--accent); }
+.page-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── Modal ─────────────────────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(0,0,0,.7); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  opacity: 0; visibility: hidden; transition: opacity .2s, visibility .2s;
+}
+.modal-overlay.show { opacity: 1; visibility: visible; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 18px; width: 100%; max-width: 520px;
+  max-height: 90dvh; overflow-y: auto;
+  transform: translateY(20px); transition: transform .2s;
+}
+.modal-overlay.show .modal { transform: translateY(0); }
+.modal-head {
+  padding: 18px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; background: var(--surface); z-index: 1;
+}
+.modal-title { font-size: 15px; font-weight: 800; }
+.modal-close {
+  width: 28px; height: 28px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface2); color: var(--text-muted);
+  font-size: 16px; transition: background .15s;
+}
+.modal-close:hover { background: var(--surface3); color: var(--text); }
+.modal-body  { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.modal-foot  { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.field-row.single { grid-template-columns: 1fr; }
+
+/* ── Toast ─────────────────────────────────────────────────────────────────── */
+#toast-container {
+  position: fixed; top: 16px; right: 16px; z-index: 200;
+  display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+}
+.toast {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px 16px;
+  font-size: 13px; font-weight: 500;
+  display: flex; align-items: center; gap: 10px;
+  animation: slide-in .25s ease;
+  pointer-events: auto; min-width: 220px;
+}
+.toast.success { border-color: rgba(52,199,89,.3); }
+.toast.error   { border-color: rgba(255,59,48,.3); }
+@keyframes slide-in { from { transform: translateX(60px); opacity: 0; } }
+
+/* ── Player detail sidebar ─────────────────────────────────────────────────── */
+.player-drawer {
+  position: fixed; right: 0; top: 0; bottom: 0;
+  width: 420px; max-width: 95vw;
+  background: var(--surface); border-left: 1px solid var(--border);
+  z-index: 50; overflow-y: auto;
+  transform: translateX(100%); transition: transform .25s ease;
+}
+.player-drawer.open { transform: translateX(0); }
+.drawer-head {
+  padding: 16px 18px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; background: var(--surface); z-index: 1;
+}
+.drawer-body { padding: 18px; display: flex; flex-direction: column; gap: 16px; }
+.drawer-section { display: flex; flex-direction: column; gap: 10px; }
+.drawer-section-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--text-muted);
+  padding-bottom: 6px; border-bottom: 1px solid var(--border);
+}
+.drawer-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.drawer-stat {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 12px;
+}
+.drawer-stat-label { font-size: 10px; color: var(--text-muted); margin-bottom: 2px; }
+.drawer-stat-value { font-size: 15px; font-weight: 800; }
+.drawer-stat-value.accent { color: var(--accent); }
+.drawer-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ── Ban list items ────────────────────────────────────────────────────────── */
+.ban-item {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px 14px;
+  display: flex; align-items: center; gap: 12px;
+}
+.ban-item-info { flex: 1; min-width: 0; }
+.ban-item-nick { font-size: 13px; font-weight: 700; }
+.ban-item-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.ban-list { display: flex; flex-direction: column; gap: 8px; }
+.ban-section-title {
+  font-size: 12px; font-weight: 700; color: var(--text-muted);
+  padding: 0 0 8px; border-bottom: 1px solid var(--border); margin-bottom: 8px;
+}
+
+/* ── ELO chip ─────────────────────────────────────────────────────────────── */
+.elo-chip {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 12px; font-weight: 700; color: var(--yellow);
+}
+.elo-chip::before { content: '⚡'; font-size: 10px; }
+
+/* ── Loading spinner ──────────────────────────────────────────────────────── */
+.spinner {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid var(--border); border-top-color: var(--accent);
+  animation: spin .6s linear infinite; display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-row { display: flex; align-items: center; justify-content: center; padding: 40px; gap: 12px; color: var(--text-muted); }
+
+/* ── Match status ─────────────────────────────────────────────────────────── */
+.match-status-finished  { color: var(--green); }
+.match-status-cancelled { color: var(--text-muted); text-decoration: line-through; }
+.match-status-playing   { color: var(--accent); }
+.match-status-other     { color: var(--text-muted); }
+
+/* ── Responsive ────────────────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  :root { --sidebar-w: 0px; }
+  .sidebar { display: none; }
+  .main { margin-left: 0; }
+  .page-content { padding: 16px; }
+  .stat-card-value { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════ LOGIN ═══════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">⚙️</div>
+    <div class="login-title">Admin Panel</div>
+    <div class="login-sub">Faceit Arena · Standoff 2</div>
+    <div class="field-group">
+      <label class="field-label">Логин</label>
+      <input class="field-input" id="l-login" type="text" placeholder="Введите логин" autocomplete="username">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Пароль</label>
+      <input class="field-input" id="l-pass" type="password" placeholder="Введите пароль" autocomplete="current-password">
+    </div>
+    <div class="login-error" id="l-error"></div>
+    <button class="btn-primary" id="l-btn" onclick="doLogin()">Войти</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════ APP ══════════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-head">
+      <div class="sidebar-icon">⚙️</div>
+      <div class="sidebar-brand">Admin Panel<span>Faceit Arena</span></div>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section">Обзор</div>
+      <div class="nav-item active" data-page="dashboard">
+        <span class="nav-icon">📊</span> Дашборд
+      </div>
+      <div class="nav-section">Управление</div>
+      <div class="nav-item" data-page="players">
+        <span class="nav-icon">👥</span> Игроки
+      </div>
+      <div class="nav-item" data-page="matches">
+        <span class="nav-icon">🎮</span> Матчи
+      </div>
+      <div class="nav-item" data-page="bans">
+        <span class="nav-icon">🚫</span> Баны
+      </div>
+    </div>
+    <div class="sidebar-foot">
+      <button class="logout-btn" onclick="doLogout()">
+        <span>🚪</span> Выйти
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Дашборд</div>
+      <div class="topbar-meta" id="topbar-meta"></div>
+    </div>
+    <div class="page-content">
+
+      <!-- ── Dashboard ───────────────────────────────────────────────────── -->
+      <div class="panel active" id="panel-dashboard">
+        <div class="stat-grid" id="dash-stats"></div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">Последние матчи</span></div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr>
+                <th>#</th><th>Карта</th><th>Счёт</th><th>Статус</th><th>Дата</th>
+              </tr></thead>
+              <tbody id="dash-matches"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Players ─────────────────────────────────────────────────────── -->
+      <div class="panel" id="panel-players">
+        <div class="search-row">
+          <input class="search-input" id="players-search" placeholder="🔍 Поиск по нику..." oninput="debouncePlayerSearch()">
+          <span style="font-size:12px; color:var(--text-muted)" id="players-count"></span>
+        </div>
+        <div class="card">
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr>
+                <th>Игрок</th><th>ELO</th><th>LVL</th>
+                <th>Матчи</th><th>KD</th><th>ACF</th>
+                <th>Бан</th><th></th>
+              </tr></thead>
+              <tbody id="players-tbody"></tbody>
+            </table>
+          </div>
+          <div class="card-body" style="padding-top:0">
+            <div class="pagination" id="players-pag"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Matches ─────────────────────────────────────────────────────── -->
+      <div class="panel" id="panel-matches">
+        <div class="search-row">
+          <select class="search-input" id="matches-status" onchange="loadMatches(1)" style="max-width:160px">
+            <option value="all">Все статусы</option>
+            <option value="finished">Завершённые</option>
+            <option value="playing">В игре</option>
+            <option value="cancelled">Отменённые</option>
+          </select>
+          <span style="font-size:12px; color:var(--text-muted)" id="matches-count"></span>
+        </div>
+        <div class="card">
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr>
+                <th>№</th><th>Карта</th><th>Счёт</th><th>Тип</th>
+                <th>Статус</th><th>Дата</th><th></th>
+              </tr></thead>
+              <tbody id="matches-tbody"></tbody>
+            </table>
+          </div>
+          <div class="card-body" style="padding-top:0">
+            <div class="pagination" id="matches-pag"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Bans ────────────────────────────────────────────────────────── -->
+      <div class="panel" id="panel-bans">
+        <div id="bans-content"></div>
+      </div>
+
+    </div><!-- /page-content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ═══════════════════════ PLAYER DRAWER ════════════════════════════════════ -->
+<div class="player-drawer" id="player-drawer">
+  <div class="drawer-head">
+    <div class="modal-title" id="drawer-title">Игрок</div>
+    <button class="modal-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+</div>
+
+<!-- ═══════════════════════ MODALS ═══════════════════════════════════════════ -->
+
+<!-- Edit player modal -->
+<div class="modal-overlay" id="edit-modal" onclick="if(event.target===this)closeEdit()">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">✏️ Редактировать игрока</div>
+      <button class="modal-close" onclick="closeEdit()">✕</button>
+    </div>
+    <div class="modal-body" id="edit-modal-body"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeEdit()">Отмена</button>
+      <button class="btn btn-accent" onclick="savePlayer()">💾 Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Ban player modal -->
+<div class="modal-overlay" id="ban-modal" onclick="if(event.target===this)closeBan()">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">🚫 Забанить игрока</div>
+      <button class="modal-close" onclick="closeBan()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:13px; color:var(--text-muted); margin-bottom:4px">Игрок: <b id="ban-nickname"></b></div>
+      <div class="field-group">
+        <label class="field-label">Тип бана</label>
+        <select class="field-input" id="ban-type" onchange="toggleBanDuration()">
+          <option value="perm">🔴 Постоянный бан</option>
+          <option value="temp">⏱ Временный бан</option>
+          <option value="queue">🚶 Бан очереди</option>
+        </select>
+      </div>
+      <div class="field-group" id="ban-duration-row">
+        <label class="field-label">Длительность (минуты)</label>
+        <input class="field-input" id="ban-minutes" type="number" min="1" value="60" placeholder="60">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeBan()">Отмена</button>
+      <button class="btn btn-danger" onclick="confirmBan()">🚫 Забанить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cancel match confirm modal -->
+<div class="modal-overlay" id="cancel-modal" onclick="if(event.target===this)closeCancelModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">⚠️ Отмена матча</div>
+      <button class="modal-close" onclick="closeCancelModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:13px; color:var(--text-muted)">
+        Откатить матч <b id="cancel-match-num"></b>?<br>
+        Весь ELO и статистика всех игроков будут возвращены к состоянию до матча.
+      </div>
+      <div style="background:rgba(255,59,48,.08); border:1px solid rgba(255,59,48,.15); border-radius:10px; padding:12px; font-size:12px; color:var(--text-muted);">
+        ⚠️ Это действие необратимо. Матч получит статус <b>cancelled</b>.
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeCancelModal()">Отмена</button>
+      <button class="btn btn-danger" onclick="confirmCancelMatch()">🗑 Откатить матч</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast-container"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════════════════════════
+const API = 'https://faceit-api.wenzzyk.workers.dev';
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════════════════════════════
+let _token = localStorage.getItem('admin_token') || '';
+
+function authHeaders() {
+  return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${_token}` };
+}
+
+async function doLogin() {
+  const login    = document.getElementById('l-login').value.trim();
+  const password = document.getElementById('l-pass').value;
+  const btn      = document.getElementById('l-btn');
+  const err      = document.getElementById('l-error');
+  if (!login || !password) return;
+
+  btn.disabled = true; btn.textContent = '...';
+  err.classList.remove('show');
+
+  try {
+    const res = await fetch(`${API}/admin/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ login, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      err.textContent = data.error || 'Ошибка входа';
+      err.classList.add('show');
+      return;
+    }
+    _token = data.token;
+    localStorage.setItem('admin_token', _token);
+    bootApp();
+  } catch {
+    err.textContent = 'Сервер недоступен';
+    err.classList.add('show');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Войти';
+  }
+}
+
+function doLogout() {
+  _token = '';
+  localStorage.removeItem('admin_token');
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+document.getElementById('l-pass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// APP BOOT
+// ═══════════════════════════════════════════════════════════════════════════════
+function bootApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  document.getElementById('topbar-meta').textContent = new Date().toLocaleDateString('ru', { day:'2-digit', month:'long', year:'numeric' });
+  navigateTo('dashboard');
+}
+
+// Auto-login if token stored
+if (_token) bootApp();
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════════════════════════
+const PAGE_TITLES = { dashboard:'Дашборд', players:'Игроки', matches:'Матчи', bans:'Баны' };
+
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', () => navigateTo(el.dataset.page));
+});
+
+function navigateTo(page) {
+  document.querySelectorAll('.nav-item').forEach(el =>
+    el.classList.toggle('active', el.dataset.page === page));
+  document.querySelectorAll('.panel').forEach(el =>
+    el.classList.toggle('active', el.id === `panel-${page}`));
+  document.getElementById('topbar-title').textContent = PAGE_TITLES[page] || page;
+
+  if (page === 'dashboard') loadDashboard();
+  else if (page === 'players') loadPlayers(1);
+  else if (page === 'matches') loadMatches(1);
+  else if (page === 'bans')    loadBans();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// API HELPERS
+// ═══════════════════════════════════════════════════════════════════════════════
+async function apiGet(path) {
+  const res = await fetch(`${API}${path}`, { headers: authHeaders() });
+  if (res.status === 401) { doLogout(); throw new Error('Unauthorized'); }
+  return res.json();
+}
+
+async function apiPost(path, body) {
+  const res = await fetch(`${API}${path}`, {
+    method: 'POST', headers: authHeaders(), body: JSON.stringify(body),
+  });
+  if (res.status === 401) { doLogout(); throw new Error('Unauthorized'); }
+  return { ok: res.ok, status: res.status, data: await res.json() };
+}
+
+async function apiPatch(path, body) {
+  const res = await fetch(`${API}${path}`, {
+    method: 'PATCH', headers: authHeaders(), body: JSON.stringify(body),
+  });
+  if (res.status === 401) { doLogout(); throw new Error('Unauthorized'); }
+  return { ok: res.ok, data: await res.json() };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════════════════════════
+function toast(msg, type = 'success') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span><span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FORMAT HELPERS
+// ═══════════════════════════════════════════════════════════════════════════════
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('ru', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' });
+}
+function fmtBanBadge(status) {
+  if (status === 'perm')  return '<span class="badge badge-red">🔴 Перм</span>';
+  if (status === 'temp')  return '<span class="badge badge-orange">⏱ Врем</span>';
+  if (status === 'queue') return '<span class="badge badge-yellow">🚶 Очередь</span>';
+  return '<span class="badge badge-gray">✅ Нет</span>';
+}
+function fmtMatchStatus(s) {
+  const map = { finished:'Завершён', cancelled:'Отменён', playing:'В игре', waiting_join:'Ожидает', voting:'Голосует' };
+  const cls = s === 'finished' ? 'match-status-finished'
+            : s === 'cancelled' ? 'match-status-cancelled'
+            : s === 'playing' || s === 'voting' || s === 'waiting_join' ? 'match-status-playing'
+            : 'match-status-other';
+  return `<span class="${cls}">${map[s] || s}</span>`;
+}
+function eloColor(elo) {
+  if (elo >= 2001) return '#FF4444';
+  if (elo >= 1751) return '#FF8800';
+  if (elo >= 1531) return '#FFAA00';
+  if (elo >= 1351) return '#FFD700';
+  if (elo >= 1201) return '#88DD44';
+  return '#aaaaaa';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════════════════════════════════
+async function loadDashboard() {
+  document.getElementById('dash-stats').innerHTML = `<div class="loading-row" style="grid-column:1/-1"><div class="spinner"></div> Загрузка...</div>`;
+  try {
+    const d = await apiGet('/admin/dashboard');
+    document.getElementById('dash-stats').innerHTML = `
+      <div class="stat-card">
+        <div class="stat-card-label">Всего игроков</div>
+        <div class="stat-card-value accent">${d.totalPlayers.toLocaleString()}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Матчей сыграно</div>
+        <div class="stat-card-value">${d.totalMatches.toLocaleString()}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Новых сегодня</div>
+        <div class="stat-card-value green">${d.newToday}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Матчей сегодня</div>
+        <div class="stat-card-value yellow">${d.matchesToday}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Активных матчей</div>
+        <div class="stat-card-value accent">${d.activeMatches}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Забаненных</div>
+        <div class="stat-card-value red">${d.activeBans}</div>
+      </div>
+    `;
+    const tbody = document.getElementById('dash-matches');
+    tbody.innerHTML = (d.recentMatches || []).map(m => `
+      <tr>
+        <td style="color:var(--text-muted)">#${m.match_number || m.id}</td>
+        <td><b>${m.map || '?'}</b>${m.is_pro_league ? ' <span class="badge badge-orange">PRO</span>' : ''}</td>
+        <td>${m.score_t ?? '?'}:${m.score_ct ?? '?'}</td>
+        <td>${fmtMatchStatus(m.status)}</td>
+        <td style="color:var(--text-muted)">${fmtDate(m.finished_at || m.created_at)}</td>
+      </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px">Нет матчей</td></tr>';
+  } catch (e) {
+    document.getElementById('dash-stats').innerHTML = `<p style="color:var(--red)">Ошибка загрузки: ${e.message}</p>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PLAYERS
+// ═══════════════════════════════════════════════════════════════════════════════
+let playersPage = 1, _playerSearchTimer;
+
+function debouncePlayerSearch() {
+  clearTimeout(_playerSearchTimer);
+  _playerSearchTimer = setTimeout(() => loadPlayers(1), 350);
+}
+
+async function loadPlayers(page = 1) {
+  playersPage = page;
+  const search = document.getElementById('players-search')?.value || '';
+  const tbody  = document.getElementById('players-tbody');
+  tbody.innerHTML = `<tr><td colspan="8"><div class="loading-row"><div class="spinner"></div> Загрузка...</div></td></tr>`;
+
+  try {
+    const url = `/admin/players?page=${page}${search.length >= 2 ? `&search=${encodeURIComponent(search)}` : ''}`;
+    const d   = await apiGet(url);
+    document.getElementById('players-count').textContent = `${d.total.toLocaleString()} игроков`;
+
+    tbody.innerHTML = d.players.map(p => `
+      <tr>
+        <td>
+          <div style="font-weight:700;font-size:13px">${p.gameNickname}</div>
+          <div style="font-size:11px;color:var(--text-muted)">id: ${p.userId}</div>
+        </td>
+        <td><span class="elo-chip" style="color:${eloColor(p.elo)}">${p.elo}</span></td>
+        <td><b>${p.level}</b></td>
+        <td>${p.totalMatches}</td>
+        <td>${p.kills && p.deaths ? (p.kills/p.deaths).toFixed(2) : '—'}</td>
+        <td>${(p.acfBalance || 0).toLocaleString()}</td>
+        <td>${fmtBanBadge(p.banStatus)}</td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-sm btn-accent" onclick="openDrawer(${p.id})">📋</button>
+          <button class="btn btn-sm btn-ghost" onclick="openEdit(${p.id})" style="margin-left:4px">✏️</button>
+        </td>
+      </tr>`).join('') || `<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px">Игроки не найдены</td></tr>`;
+
+    renderPagination('players-pag', d.page, d.pages, loadPlayers);
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="8" style="color:var(--red);padding:16px">${e.message}</td></tr>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PLAYER DRAWER
+// ═══════════════════════════════════════════════════════════════════════════════
+let _currentDrawerPlayer = null;
+
+async function openDrawer(playerId) {
+  const drawer = document.getElementById('player-drawer');
+  drawer.classList.add('open');
+  document.getElementById('drawer-title').textContent = 'Загрузка...';
+  document.getElementById('drawer-body').innerHTML = `<div class="loading-row"><div class="spinner"></div> Загрузка...</div>`;
+
+  try {
+    const p = await apiGet(`/admin/player/${playerId}`);
+    _currentDrawerPlayer = p;
+    document.getElementById('drawer-title').textContent = p.gameNickname;
+
+    const kd = (p.kills && p.deaths) ? (p.kills/p.deaths).toFixed(2) : '—';
+    const wr = p.totalMatches ? Math.round((p.wins/p.totalMatches)*100) + '%' : '—';
+
+    document.getElementById('drawer-body').innerHTML = `
+      <div class="drawer-section">
+        <div class="drawer-section-title">Основное</div>
+        <div class="drawer-stat-grid">
+          <div class="drawer-stat">
+            <div class="drawer-stat-label">ELO</div>
+            <div class="drawer-stat-value accent">${p.elo}</div>
+          </div>
+          <div class="drawer-stat">
+            <div class="drawer-stat-label">Уровень</div>
+            <div class="drawer-stat-value">${p.level}</div>
+          </div>
+          <div class="drawer-stat">
+            <div class="drawer-stat-label">Матчей</div>
+            <div class="drawer-stat-value">${p.totalMatches}</div>
+          </div>
+          <div class="drawer-stat">
+            <div class="drawer-stat-label">Побед</div>
+            <div class="drawer-stat-value">${p.wins} (${wr})</div>
+          </div>
+          <div class="drawer-stat">
+            <div class="drawer-stat-label">K/D</div>
+            <div class="drawer-stat-value">${kd}</div>
+          </div>
+          <div class="drawer-stat">
+            <div class="drawer-stat-label">ACF Баланс</div>
+            <div class="drawer-stat-value">${(p.acfBalance||0).toLocaleString()}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="drawer-section">
+        <div class="drawer-section-title">Детали</div>
+        <table style="font-size:12px;width:100%">
+          <tr><td style="color:var(--text-muted);padding:4px 0">Telegram ID</td><td>${p.userId}</td></tr>
+          <tr><td style="color:var(--text-muted);padding:4px 0">Game ID</td><td>${p.gameId || '—'}</td></tr>
+          <tr><td style="color:var(--text-muted);padding:4px 0">Стрик</td><td>${p.winStreak} / лучший: ${p.bestStreak}</td></tr>
+          <tr><td style="color:var(--text-muted);padding:4px 0">MVP</td><td>${p.mvpCount}</td></tr>
+          <tr><td style="color:var(--text-muted);padding:4px 0">Раундов</td><td>${p.roundsPlayed}</td></tr>
+          <tr><td style="color:var(--text-muted);padding:4px 0">Премиум</td><td>${p.isPremium ? `✅ до ${fmtDate(p.premiumUntil)}` : '—'}</td></tr>
+          <tr><td style="color:var(--text-muted);padding:4px 0">Про лига</td><td>${p.hasProLeague ? '✅' : '—'}</td></tr>
+          <tr><td style="color:var(--text-muted);padding:4px 0">Бан</td><td>${fmtBanBadge(p.banStatus)}</td></tr>
+          ${p.banStatus === 'temp' ? `<tr><td style="color:var(--text-muted);padding:4px 0">Бан до</td><td>${fmtDate(p.blockedUntil)}</td></tr>` : ''}
+          ${p.banStatus === 'queue' ? `<tr><td style="color:var(--text-muted);padding:4px 0">Очередь до</td><td>${fmtDate(p.queueBlockedUntil)}</td></tr>` : ''}
+          <tr><td style="color:var(--text-muted);padding:4px 0">Регистрация</td><td>${fmtDate(p.createdAt)}</td></tr>
+        </table>
+      </div>
+
+      ${p.recentMatches?.length ? `
+      <div class="drawer-section">
+        <div class="drawer-section-title">Последние матчи</div>
+        ${p.recentMatches.map(m => `
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <span style="font-weight:700;font-size:12px">${m.map}</span>
+            <span style="font-size:12px;color:var(--text-muted)">${m.kills}/${m.deaths}</span>
+            <span class="${m.eloChange >= 0 ? 'badge badge-green' : 'badge badge-red'}">${m.eloChange >= 0 ? '+' : ''}${m.eloChange}</span>
+          </div>`).join('')}
+      </div>` : ''}
+
+      <div class="drawer-section">
+        <div class="drawer-section-title">Действия</div>
+        <div class="drawer-actions">
+          <button class="btn btn-accent" onclick="openEdit(${p.id})">✏️ Редактировать</button>
+          <button class="btn btn-danger" onclick="openBan(${p.id},'${p.gameNickname}')">🚫 Забанить</button>
+          ${p.banStatus !== 'none' ? `<button class="btn btn-green" onclick="doUnban(${p.id})">✅ Разбанить</button>` : ''}
+        </div>
+      </div>
+    `;
+  } catch (e) {
+    document.getElementById('drawer-body').innerHTML = `<p style="color:var(--red)">${e.message}</p>`;
+  }
+}
+
+function closeDrawer() {
+  document.getElementById('player-drawer').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// EDIT PLAYER MODAL
+// ═══════════════════════════════════════════════════════════════════════════════
+let _editPlayerId = null;
+
+async function openEdit(playerId) {
+  _editPlayerId = playerId;
+  const modal = document.getElementById('edit-modal');
+  modal.classList.add('show');
+  document.getElementById('edit-modal-body').innerHTML = `<div class="loading-row"><div class="spinner"></div></div>`;
+
+  try {
+    const p = await apiGet(`/admin/player/${playerId}`);
+
+    const fields = [
+      { key:'elo',            label:'ELO',          type:'number', value:p.elo },
+      { key:'level',          label:'Уровень',       type:'number', value:p.level },
+      { key:'acf_balance',    label:'ACF Баланс',    type:'number', value:p.acfBalance||0 },
+      { key:'game_nickname',  label:'Никнейм',       type:'text',   value:p.gameNickname||'' },
+      { key:'game_id',        label:'Game ID',       type:'text',   value:p.gameId||'' },
+      { key:'wins',           label:'Победы',        type:'number', value:p.wins },
+      { key:'losses',         label:'Поражения',     type:'number', value:p.losses },
+      { key:'total_matches',  label:'Всего матчей',  type:'number', value:p.totalMatches },
+      { key:'kills',          label:'Убийства',      type:'number', value:p.kills },
+      { key:'deaths',         label:'Смерти',        type:'number', value:p.deaths },
+      { key:'assists',        label:'Ассисты',       type:'number', value:p.assists },
+      { key:'rounds_played',  label:'Раунды',        type:'number', value:p.roundsPlayed },
+      { key:'win_streak',     label:'Текущий стрик', type:'number', value:p.winStreak },
+      { key:'best_streak',    label:'Лучший стрик',  type:'number', value:p.bestStreak },
+      { key:'mvp_count',      label:'MVP',           type:'number', value:p.mvpCount },
+    ];
+
+    // Pair up fields in rows of 2
+    let html = `<div style="font-size:12px;color:var(--text-muted);padding:0 0 8px">ID: ${p.id} · ${p.gameNickname}</div>`;
+    for (let i = 0; i < fields.length; i += 2) {
+      const a = fields[i], b = fields[i+1];
+      html += `<div class="field-row ${b ? '' : 'single'}">`;
+      for (const f of b ? [a, b] : [a]) {
+        html += `<div class="field-group">
+          <label class="field-label">${f.label}</label>
+          <input class="field-input" data-key="${f.key}" type="${f.type}" value="${f.value}" style="font-size:13px">
+        </div>`;
+      }
+      html += `</div>`;
+    }
+    document.getElementById('edit-modal-body').innerHTML = html;
+  } catch(e) {
+    document.getElementById('edit-modal-body').innerHTML = `<p style="color:var(--red)">${e.message}</p>`;
+  }
+}
+
+function closeEdit() {
+  document.getElementById('edit-modal').classList.remove('show');
+}
+
+async function savePlayer() {
+  const inputs = document.querySelectorAll('#edit-modal-body input[data-key]');
+  const body = {};
+  inputs.forEach(inp => {
+    const k = inp.dataset.key;
+    body[k] = inp.type === 'number' ? Number(inp.value) : inp.value;
+  });
+  try {
+    const res = await apiPatch(`/admin/player/${_editPlayerId}`, body);
+    if (!res.ok) throw new Error(res.data.error || 'Ошибка');
+    toast('Игрок обновлён');
+    closeEdit();
+    // Refresh current view
+    if (_currentDrawerPlayer?.id === _editPlayerId) openDrawer(_editPlayerId);
+    loadPlayers(playersPage);
+  } catch(e) {
+    toast(e.message, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BAN / UNBAN
+// ═══════════════════════════════════════════════════════════════════════════════
+let _banPlayerId = null;
+
+function openBan(id, nick) {
+  _banPlayerId = id;
+  document.getElementById('ban-nickname').textContent = nick;
+  toggleBanDuration();
+  document.getElementById('ban-modal').classList.add('show');
+}
+function closeBan() {
+  document.getElementById('ban-modal').classList.remove('show');
+}
+function toggleBanDuration() {
+  const t = document.getElementById('ban-type').value;
+  document.getElementById('ban-duration-row').style.display = (t === 'temp' || t === 'queue') ? 'flex' : 'none';
+}
+
+async function confirmBan() {
+  const type    = document.getElementById('ban-type').value;
+  const minutes = parseInt(document.getElementById('ban-minutes').value || 60, 10);
+  try {
+    const res = await apiPost(`/admin/player/${_banPlayerId}/ban`, { type, minutes });
+    if (!res.ok) throw new Error(res.data.error || 'Ошибка');
+    toast('Бан применён');
+    closeBan();
+    loadPlayers(playersPage);
+    if (_currentDrawerPlayer?.id === _banPlayerId) openDrawer(_banPlayerId);
+    loadBans();
+  } catch(e) {
+    toast(e.message, 'error');
+  }
+}
+
+async function doUnban(id) {
+  try {
+    const res = await apiPost(`/admin/player/${id}/unban`, {});
+    if (!res.ok) throw new Error(res.data.error || 'Ошибка');
+    toast('Бан снят');
+    loadPlayers(playersPage);
+    if (_currentDrawerPlayer?.id === id) openDrawer(id);
+    loadBans();
+  } catch(e) {
+    toast(e.message, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MATCHES
+// ═══════════════════════════════════════════════════════════════════════════════
+let matchesPage = 1;
+
+async function loadMatches(page = 1) {
+  matchesPage = page;
+  const status = document.getElementById('matches-status')?.value || 'all';
+  const tbody  = document.getElementById('matches-tbody');
+  tbody.innerHTML = `<tr><td colspan="7"><div class="loading-row"><div class="spinner"></div> Загрузка...</div></td></tr>`;
+
+  try {
+    const d = await apiGet(`/admin/matches?page=${page}&status=${status}`);
+    document.getElementById('matches-count').textContent = `${d.total.toLocaleString()} матчей`;
+
+    tbody.innerHTML = d.matches.map(m => {
+      const canCancel = m.status === 'finished' || m.status === 'playing' || m.status === 'waiting_join';
+      return `<tr>
+        <td style="color:var(--text-muted);font-size:12px">#${m.match_number || m.id}</td>
+        <td><b>${m.map || '?'}</b></td>
+        <td>${m.score_t ?? '?'} : ${m.score_ct ?? '?'}</td>
+        <td>${m.is_pro_league ? '<span class="badge badge-orange">PRO</span>' : '<span class="badge badge-gray">Casual</span>'}</td>
+        <td>${fmtMatchStatus(m.status)}</td>
+        <td style="color:var(--text-muted);font-size:12px">${fmtDate(m.finished_at || m.created_at)}</td>
+        <td>
+          ${canCancel ? `<button class="btn btn-sm btn-danger" onclick="openCancelModal(${m.id},'${m.match_number || m.id}')">🗑 Откат</button>` : ''}
+        </td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px">Матчи не найдены</td></tr>`;
+
+    renderPagination('matches-pag', d.page, d.pages, loadMatches);
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="7" style="color:var(--red);padding:16px">${e.message}</td></tr>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CANCEL MATCH MODAL
+// ═══════════════════════════════════════════════════════════════════════════════
+let _cancelMatchId = null;
+
+function openCancelModal(id, num) {
+  _cancelMatchId = id;
+  document.getElementById('cancel-match-num').textContent = `#${num}`;
+  document.getElementById('cancel-modal').classList.add('show');
+}
+function closeCancelModal() {
+  document.getElementById('cancel-modal').classList.remove('show');
+}
+
+async function confirmCancelMatch() {
+  const btn = document.querySelector('#cancel-modal .btn-danger');
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    const res = await apiPost(`/admin/match/${_cancelMatchId}/cancel`, {});
+    if (!res.ok) throw new Error(res.data.error || 'Ошибка');
+    const n = res.data.reverted?.length || 0;
+    toast(`Матч откачен. Откатано игроков: ${n}`);
+    closeCancelModal();
+    loadMatches(matchesPage);
+  } catch(e) {
+    toast(e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = '🗑 Откатить матч';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BANS PAGE
+// ═══════════════════════════════════════════════════════════════════════════════
+async function loadBans() {
+  document.getElementById('bans-content').innerHTML = `<div class="loading-row"><div class="spinner"></div> Загрузка...</div>`;
+  try {
+    const d = await apiGet('/admin/bans');
+    const total = d.permanent.length + d.temporary.length + d.queue.length;
+
+    if (!total) {
+      document.getElementById('bans-content').innerHTML = `
+        <div style="text-align:center;color:var(--text-muted);padding:60px">
+          <div style="font-size:48px;margin-bottom:12px">✅</div>
+          <div>Забаненных игроков нет</div>
+        </div>`;
+      return;
+    }
+
+    function renderList(arr, emptyText) {
+      if (!arr.length) return `<div style="color:var(--text-muted);font-size:12px;padding:4px 0">${emptyText}</div>`;
+      return arr.map(p => `
+        <div class="ban-item">
+          <div class="ban-item-info">
+            <div class="ban-item-nick">${p.gameNickname}</div>
+            <div class="ban-item-meta">
+              ELO ${p.elo} · Lvl ${p.level}
+              ${p.until ? ` · до ${fmtDate(p.until)}` : ''}
+            </div>
+          </div>
+          ${fmtBanBadge(p.type)}
+          <button class="btn btn-sm btn-green" onclick="doUnban(${p.id})">✅ Снять</button>
+          <button class="btn btn-sm btn-ghost" onclick="openDrawer(${p.id})">📋</button>
+        </div>`).join('');
+    }
+
+    document.getElementById('bans-content').innerHTML = `
+      <div style="display:grid;gap:16px">
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">🔴 Постоянные баны</span>
+            <span class="badge badge-red">${d.permanent.length}</span>
+          </div>
+          <div class="card-body">
+            <div class="ban-list">${renderList(d.permanent, 'Нет')}</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">⏱ Временные баны</span>
+            <span class="badge badge-orange">${d.temporary.length}</span>
+          </div>
+          <div class="card-body">
+            <div class="ban-list">${renderList(d.temporary, 'Нет')}</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">🚶 Баны очереди</span>
+            <span class="badge badge-yellow">${d.queue.length}</span>
+          </div>
+          <div class="card-body">
+            <div class="ban-list">${renderList(d.queue, 'Нет')}</div>
+          </div>
+        </div>
+      </div>`;
+  } catch(e) {
+    document.getElementById('bans-content').innerHTML = `<p style="color:var(--red)">${e.message}</p>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PAGINATION
+// ═══════════════════════════════════════════════════════════════════════════════
+function renderPagination(containerId, current, total, fn) {
+  const el = document.getElementById(containerId);
+  if (!el || total <= 1) { if (el) el.innerHTML = ''; return; }
+
+  let html = `<button class="page-btn" onclick="${fn.name}(${current-1})" ${current<=1?'disabled':''}>‹</button>`;
+
+  const pages = [];
+  for (let i = 1; i <= total; i++) {
+    if (i === 1 || i === total || Math.abs(i - current) <= 1) pages.push(i);
+    else if (pages[pages.length-1] !== '…') pages.push('…');
+  }
+  pages.forEach(p => {
+    if (p === '…') html += `<span style="color:var(--text-muted);padding:0 4px">…</span>`;
+    else html += `<button class="page-btn ${p===current?'active':''}" onclick="${fn.name}(${p})">${p}</button>`;
+  });
+
+  html += `<button class="page-btn" onclick="${fn.name}(${current+1})" ${current>=total?'disabled':''}>›</button>`;
+  el.innerHTML = html;
+}
+</script>
+</body>
+      </html>
