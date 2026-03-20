@@ -712,35 +712,52 @@ function renderPlayerStats(p, isProTab = false) {
 
   const cfg = getProfileConfig();
 
-  return `
-    <div class="${eloCardClass}">
-      <div class="elo-label">${eloLabel}</div>
-      <div class="elo-row">
-        <span class="elo-value"><span data-value="${data.elo}">0</span></span>
-        <div class="elo-meta">
-          <div>Лучшая серия: <b>${data.bestStreak}</b></div>
-          <div>Текущая серия: <b>${data.winStreak}</b></div>
-        </div>
-      </div>
-    </div>
+  // Приватность: скрывать ELO и stats только для своего профиля
+  const isSelf   = !state.viewedNick || state.viewedNick === state.player?.gameNickname;
+  const _hideElo   = isSelf && !!p.hideElo;
+  const _hideStats = isSelf && !!p.hideStats;
 
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="label">Матчей</div>
-        <div class="value"><span data-value="${data.totalMatches}">0</span></div>
-      </div>
-      <div class="stat-card">
-        <div class="label">Побед</div>
-        <div class="value green"><span data-value="${data.wins}">0</span></div>
-      </div>
-      <div class="stat-card">
-        <div class="label">K/D</div>
-        <div class="value"><span data-value="${data.kd}" data-decimals="2">0</span></div>
-      </div>
-      <div class="ring-card" style="position:relative">
-        ${ringChartHTML(data.winRate, 52, 5)}
-      </div>
-    </div>
+  const eloBlock = _hideElo
+    ? `<div class="${eloCardClass}"><div class="elo-label">${eloLabel}</div>
+        <div style="padding:12px 0;color:var(--text-secondary);font-size:13px">🔒 ELO скрыт</div></div>`
+    : `<div class="${eloCardClass}">
+        <div class="elo-label">${eloLabel}</div>
+        <div class="elo-row">
+          <span class="elo-value"><span data-value="${data.elo ?? data.eloRaw ?? 0}">0</span></span>
+          <div class="elo-meta">
+            <div>Лучшая серия: <b>${data.bestStreak}</b></div>
+            <div>Текущая серия: <b>${data.winStreak}</b></div>
+          </div>
+        </div>
+      </div>`;
+
+  const statsBlock = _hideStats
+    ? `<div class="stats-grid" style="opacity:.5">
+        <div class="stat-card" style="grid-column:1/-1;text-align:center;color:var(--text-secondary)">
+          🔒 Статистика скрыта
+        </div>
+      </div>`
+    : `<div class="stats-grid">
+        <div class="stat-card">
+          <div class="label">Матчей</div>
+          <div class="value"><span data-value="${data.totalMatches}">0</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Побед</div>
+          <div class="value green"><span data-value="${data.wins}">0</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="label">K/D</div>
+          <div class="value"><span data-value="${data.kd ?? 0}" data-decimals="2">0</span></div>
+        </div>
+        <div class="ring-card" style="position:relative">
+          ${ringChartHTML(data.winRate ?? 0, 52, 5)}
+        </div>
+      </div>`;
+
+  return `
+    ${eloBlock}
+    ${statsBlock}
 
     ${!isProTab ? `
     <div class="stats-grid3">
