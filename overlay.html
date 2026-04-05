@@ -1,163 +1,273 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Faceit Arena OBS Overlay</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faceit Arena OBS Overlay</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,700;0,800;0,900;1,700;1,800&display=swap');
 
-    :root {
-      --bg-glass: rgba(13, 13, 13, 0.7);
-      --accent: #FFD700;
-      --accent-red: #FF3B30;
-      --text: #ffffff;
-      --text-dim: #a0a0a0;
-    }
+        :root {
+            --bg: rgba(10, 10, 10, 0.65);
+            --border: rgba(255, 255, 255, 0.1);
+            --text-main: #FFFFFF;
+            --text-label: rgba(255, 255, 255, 0.45);
+            --red: #F87171;
+            --green: #4ADE80;
+            --font: 'Montserrat', sans-serif;
+            --radius: 14px;
+        }
 
-    body {
-      margin: 0;
-      padding: 0;
-      background: transparent;
-      font-family: 'Inter', sans-serif;
-      overflow: hidden;
-      color: var(--text);
-    }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    .overlay-container {
-      width: 380px;
-      height: 120px;
-      background: var(--bg-glass);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      padding: 0 15px;
-      position: relative;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-      border-left: 4px solid var(--accent);
-    }
+        body {
+            font-family: var(--font);
+            background: transparent;
+            overflow: hidden;
+            color: var(--text-main);
+            padding: 30px;
+        }
 
-    .rank-icon-wrap {
-      width: 90px;
-      height: 90px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-    }
+        .widget {
+            width: 520px;
+            background: var(--bg);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            position: relative;
+            animation: fadeIn 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+        }
 
-    .rank-emoji {
-      font-size: 54px;
-      filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.4));
-    }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-    .level-badge {
-      position: absolute;
-      bottom: 5px;
-      right: 5px;
-      background: var(--accent);
-      color: #000;
-      font-weight: 900;
-      font-size: 14px;
-      padding: 2px 6px;
-      border-radius: 6px;
-      min-width: 14px;
-      text-align: center;
-    }
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 12px;
+        }
 
-    .info-wrap {
-      flex: 1;
-      margin-left: 15px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
 
-    .nickname {
-      font-size: 20px;
-      font-weight: 800;
-      margin-bottom: 4px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 200px;
-    }
+        .nickname {
+            font-size: 24px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: -0.5px;
+            max-width: 320px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-    .stats-row {
-      display: flex;
-      gap: 20px;
-    }
+        .top-rank {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-label);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-    .stat-item {
-      display: flex;
-      flex-direction: column;
-    }
+        .top-rank img {
+            width: 16px;
+            border-radius: 2px;
+            filter: brightness(0.85);
+        }
 
-    .stat-label {
-      font-size: 10px;
-      font-weight: 600;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
+        .elo-block {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
 
-    .stat-value {
-      font-size: 18px;
-      font-weight: 900;
-      color: var(--text);
-    }
+        .elo-value {
+            font-size: 26px;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.15);
+        }
 
-    .accent-text {
-      color: var(--accent);
-    }
+        .level-badge {
+            width: 38px;
+            height: 38px;
+            background: #FF4E4E;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 900;
+            box-shadow: 0 0 15px rgba(255, 78, 78, 0.35);
+            /* Slightly tilted for a dynamic look */
+            transform: rotate(-2deg);
+        }
 
-    /* Animations */
-    .animate-in {
-      animation: slideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
 
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateX(-20px); }
-      to { opacity: 1; transform: translateX(0); }
-    }
-    
-    .loading {
-        font-size: 12px;
-        color: var(--text-dim);
-    }
-  </style>
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--text-label);
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        /* Footer: History */
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 8px;
+        }
+
+        .history-label {
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--text-label);
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+        }
+
+        .history {
+            display: flex;
+            gap: 5px;
+        }
+
+        .match {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 900;
+            transition: transform 0.2s;
+        }
+
+        .match:hover { transform: scale(1.1); }
+
+        .match-w {
+            background: rgba(74, 222, 128, 0.25);
+            color: var(--green);
+            border: 1px solid rgba(74, 222, 128, 0.2);
+            box-shadow: 0 0 10px rgba(74, 222, 128, 0.15);
+        }
+
+        .match-l {
+            background: rgba(248, 113, 113, 0.25);
+            color: var(--red);
+            border: 1px solid rgba(248, 113, 113, 0.2);
+            box-shadow: 0 0 10px rgba(248, 113, 113, 0.15);
+        }
+
+        .match-empty {
+            background: rgba(255, 255, 255, 0.05);
+            color: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Loader */
+        #loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            font-size: 14px;
+            opacity: 0.3;
+        }
+
+        .hidden { display: none !important; }
+    </style>
 </head>
 <body>
+    <div id="loader">Syncing...</div>
 
-  <div class="overlay-container animate-in" id="overlay" style="display: none;">
-    <div class="rank-icon-wrap">
-      <span class="rank-emoji" id="rank-emoji">👑</span>
-      <span class="level-badge" id="level-badge">10</span>
+    <div id="widget" class="widget hidden">
+        <div class="header">
+            <div class="user-info">
+                <div class="nickname" id="nickname">—</div>
+                <div class="top-rank">
+                    <img src="https://flagcdn.com/w20/ru.png" alt="RU">
+                    <span>Rank <span id="rank-region">—</span></span>
+                    <span style="opacity: 0.4;">·</span>
+                    <span style="opacity: 0.7;">Global #<span id="rank-global">—</span></span>
+                </div>
+            </div>
+            <div class="elo-block">
+                <div class="elo-value" id="elo">0</div>
+                <div class="level-badge" id="level">1</div>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-label">AVG</span>
+                <span class="stat-value" id="avg-kills">0.0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">WIN %</span>
+                <span class="stat-value" id="winrate">0%</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">K/D</span>
+                <span class="stat-value" id="kd">0.00</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">KR</span>
+                <span class="stat-value" id="kr">0.00</span>
+            </div>
+        </div>
+
+        <div class="footer">
+            <span class="history-label">Last Matches</span>
+            <div class="history" id="history">
+                <!-- Matches will be injected here -->
+            </div>
+        </div>
     </div>
-    <div class="info-wrap">
-      <div class="nickname" id="nickname">PLAYERNAME</div>
-      <div class="stats-row">
-        <div class="stat-item">
-          <span class="stat-label">ELO</span>
-          <span class="stat-value accent-text" id="elo">----</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">K/D</span>
-          <span class="stat-value" id="kd">-.--</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">Win Rate</span>
-          <span class="stat-value" id="winrate">--%</span>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <div id="status" style="padding: 20px; font-family: sans-serif; color: white;">
-    Подключение...
-  </div>
-
-  <script src="overlay.js"></script>
+    <script src="overlay.js"></script>
 </body>
 </html>
